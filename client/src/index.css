@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 0%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(0, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(60, 100%, 50%);
+  --secondary-foreground: hsl(0, 0%, 0%);
+  --muted: hsl(0, 0%, 20%);
+  --muted-foreground: hsl(0, 0%, 60%);
+  --accent: hsl(120, 100%, 50%);
+  --accent-foreground: hsl(0, 0%, 0%);
+  --destructive: hsl(0, 100%, 50%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(0, 100%, 50%);
+  --input: hsl(0, 0%, 10%);
+  --ring: hsl(0, 100%, 50%);
+  --battery-red: hsl(0, 100%, 50%);
+  --battery-yellow: hsl(60, 100%, 50%);
+  --battery-green: hsl(120, 100%, 50%);
+  --display-black: hsl(0, 0%, 0%);
+  --font-mono-display: 'Courier New', monospace;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 0%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(0, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(60, 100%, 50%);
+  --secondary-foreground: hsl(0, 0%, 0%);
+  --muted: hsl(0, 0%, 20%);
+  --muted-foreground: hsl(0, 0%, 60%);
+  --accent: hsl(120, 100%, 50%);
+  --accent-foreground: hsl(0, 0%, 0%);
+  --destructive: hsl(0, 100%, 50%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(0, 100%, 50%);
+  --input: hsl(0, 0%, 10%);
+  --ring: hsl(0, 100%, 50%);
+  --battery-red: hsl(0, 100%, 50%);
+  --battery-yellow: hsl(60, 100%, 50%);
+  --battery-green: hsl(120, 100%, 50%);
+  --display-black: hsl(0, 0%, 0%);
+  --font-mono-display: 'Courier New', monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-display-black text-foreground;
+    font-family: var(--font-mono-display);
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .battery-gradient {
+    background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
+  }
+  
+  .battery-fill {
+    background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
+    transition: width 0.3s ease;
+  }
+  
+  .scrollable-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+  
+  /* Custom scrollbar for webkit browsers */
+  .scrollable-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollable-container::-webkit-scrollbar-track {
+    background: var(--display-black);
+  }
+  
+  .scrollable-container::-webkit-scrollbar-thumb {
+    background: var(--battery-red);
+    border-radius: 4px;
+  }
+}
