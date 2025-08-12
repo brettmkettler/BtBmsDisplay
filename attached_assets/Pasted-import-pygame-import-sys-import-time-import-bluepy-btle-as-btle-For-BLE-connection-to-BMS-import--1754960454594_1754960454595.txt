@@ -1,0 +1,134 @@
+import pygame
+import sys
+import time
+import bluepy.btle as btle  # For BLE connection to BMS
+import RPi.GPIO as GPIO  # For physical button
+
+# Initialize Pygame
+pygame.init()
+
+# Set up display (1440x2560 vertical/portrait orientation, fullscreen for touch)
+screen_width = 1440
+screen_height = 2560
+screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
+pygame.display.set_caption("Johnny Five Battery Status")
+
+# Fonts (larger for high-res screen)
+font_large = pygame.font.Font(None, 80)
+font_medium = pygame.font.Font(None, 60)
+
+# Colors
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
+GREEN = (0, 255, 0)
+WHITE = (255, 255, 255)
+
+# Gradient colors for battery segments
+BATTERY_GRADIENT = [(255, 0, 0), (255, 165, 0), (255, 255, 0), (0, 255, 0), (0, 128, 0)]
+
+# BMS Configuration (two BMS for 8 batteries, e.g., two 4s packs)
+BMS1_MAC = "00:00:00:00:00:00"  # Replace with your first BMS Bluetooth MAC (e.g., for batteries 1-4)
+BMS2_MAC = "00:00:00:00:00:00"  # Replace with your second BMS Bluetooth MAC (e.g., for batteries 5-8)
+SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb"
+CHAR_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
+MIN_CELL_V = 2.5  # LiFePO4 min voltage for 0%
+MAX_CELL_V = 3.65  # LiFePO4 max voltage for 100%
+
+class JBD_BMS:
+    def __init__(self, mac):
+        self.p = btle.Peripheral(mac)
+        self.svc = self.p.getServiceByUUID(SERVICE_UUID)
+        self.ch = self.svc.getCharacteristics(CHAR_UUID)[0]
+
+    def _send_cmd(self, cmd):
+        self.ch.write(bytes(cmd))
+        time.sleep(0.1)
+        return bytearray(self.ch.read())
+
+    def get_basic(self):
+        cmd = [0xDD, 0xA5, 0x03, 0x00, 0xFF, 0xFD, 0x77]
+        data = self._send_cmd(cmd)
+        if data[0] != 0xDD or data[1] != 0x00 or data[-1] != 0x77:
+            raise ValueError("Invalid basic response")
+        pos = 3  # Skip header
+        len_ = data[2]
+        total_v = ((data[pos] << 8) | data[pos + 1]) / 100.0
+        pos += 2
+        curr_raw = (data[pos] << 8) | data[pos + 1]
+        current = curr_raw / 100.0 if curr_raw < 0x8000 else - (0x10000 - curr_raw) / 100.0
+        pos += 2
+        res_cap = ((data[pos] << 8) | data[pos + 1]) / 100.0  # Ah
+        pos += 2
+        nom_cap = ((data[pos] << 8) | data[pos + 1]) / 100.0
+        pos += 2
+        # Skip cycles, date, balance, protection, version
+        pos += 2 + 2 + 2 + 2 + 1
+        soc = data[pos]
+        return {'current': current, 'soc': soc, 'res_cap': res_cap}
+
+    def get_cells(self):
+        cmd = [0xDD, 0xA5, 0x04, 0x00, 0xFF, 0xFC, 0x77]
+        data = self._send_cmd(cmd)
+        if data[0] != 0xDD or data[1] != 0x00 or data[-1] != 0x77:
+            raise ValueError("Invalid cells response")
+        pos = 3
+        len_ = data[2]
+        num_cells = len_ // 2
+        cells = []
+        for _ in range(num_cells):
+            v = ((data[pos] << 8) | data[pos + 1]) / 1000.0  # V
+            cells.append(v)
+            pos += 2
+        return cells
+
+    def disconnect(self):
+        self.p.disconnect()
+
+# Connect to BMS1 and BMS2
+try:
+    bms1 = JBD_BMS(BMS1_MAC)
+    bms2 = JBD_BMS(BMS2_MAC)
+except Exception as e:
+    print(f"BMS connection failed: {e}")
+    bms1 = None
+    bms2 = None
+
+# GPIO setup for physical big red ON button (assuming BCM pin 17, pulled up, button grounds on press)
+BUTTON_PIN = 17
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# Mode starts in standby
+active_mode = False
+
+# Cache for data
+cell_volts = [3.65] * 8  # Default full
+pack_amps = 0.0
+
+# Main loop
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Check physical button for activation (one-way switch to active)
+    if not active_mode and GPIO.input(BUTTON_PIN) == GPIO.LOW:
+        active_mode = True
+        time.sleep(0.2)  # Debounce
+
+    # Fill background
+    screen.fill(BLACK)
+
+    # Draw title
+    title_text = font_large.render("LEFT TRACKDRIVE BATTERY STATUS", True, RED)
+    screen.blit(title_text, (screen_width // 2 - title_text.get_width() // 2, 50))
+
+    # Fetch BMS data if active and connected
+    if active_mode and bms1 and bms2:
+        try:
+            basic1 = bms1.get_basic()
+            basic2 = bms2.get_basic()
+            pack_amps = abs((basic1['current'] + basic2['current']) / 2)  # Average amps (adjust based on config, e.g., series/parallel)
+            cell_volts = bms1.get_cells() + bms2.get_cells()
