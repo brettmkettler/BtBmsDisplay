@@ -74,38 +74,41 @@
   .battery-gradient {
     background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
   }
-  
+
   .battery-fill {
     background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
     transition: width 0.3s ease;
   }
-  
+
   .scrollable-container {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    height: 80vh; /* Use 4/5 of viewport height, leaving 1/5 blank at bottom */
+    height: 80vh;
+    /* Use 4/5 of viewport height, leaving 1/5 blank at bottom */
   }
-  
+
   .battery-list-container {
     min-height: fit-content;
   }
-  
+
   .battery-item {
-    height: 120px; /* Adjustable height - change this value to resize all battery items */
-    min-height: 80px; /* Minimum height to maintain readability */
+    height: 90px;
+    /* Adjustable height - change this value to resize all battery items */
+    min-height: 80px;
+    /* Minimum height to maintain readability */
   }
-  
+
   /* Custom scrollbar for webkit browsers */
   .scrollable-container::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   .scrollable-container::-webkit-scrollbar-track {
     background: var(--display-black);
   }
-  
+
   .scrollable-container::-webkit-scrollbar-thumb {
     background: var(--battery-red);
     border-radius: 4px;
