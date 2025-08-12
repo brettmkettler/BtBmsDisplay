@@ -8,7 +8,7 @@ interface BatteryListItemProps {
 export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel }: BatteryListItemProps) {
   return (
     <div 
-      className="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-display-black"
+      className="battery-item border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-display-black"
       data-testid={`battery-item-${batteryNumber}`}
     >
       {/* Battery Number */}

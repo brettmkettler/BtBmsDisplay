@@ -85,6 +85,16 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
+    height: 80vh; /* Use 4/5 of viewport height, leaving 1/5 blank at bottom */
+  }
+  
+  .battery-list-container {
+    min-height: fit-content;
+  }
+  
+  .battery-item {
+    height: 120px; /* Adjustable height - change this value to resize all battery items */
+    min-height: 80px; /* Minimum height to maintain readability */
   }
   
   /* Custom scrollbar for webkit browsers */

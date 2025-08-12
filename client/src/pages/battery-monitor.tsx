@@ -13,9 +13,9 @@ export default function BatteryMonitor() {
         </div>
       )}
       
-      {/* Battery List */}
-      <div className="flex-1 p-4 scrollable-container">
-        <div className="space-y-4" data-testid="battery-container">
+      {/* Battery List - Takes up 4/5 of screen height */}
+      <div className="p-4 scrollable-container">
+        <div className="battery-list-container space-y-4" data-testid="battery-container">
           {batteryData.length > 0 ? (
             batteryData
               .sort((a, b) => a.batteryNumber - b.batteryNumber)
@@ -36,6 +36,9 @@ export default function BatteryMonitor() {
           )}
         </div>
       </div>
+      
+      {/* Bottom 1/5 blank space */}
+      <div className="h-[20vh] bg-display-black"></div>
     </div>
   );
 }
