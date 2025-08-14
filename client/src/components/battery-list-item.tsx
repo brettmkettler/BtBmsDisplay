@@ -13,15 +13,15 @@ export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel 
     >
       {/* Battery Number */}
       <div 
-        className="text-battery-red text-4xl font-bold w-16 text-center"
+        className="text-battery-red text-6xl font-bold w-24 text-center"
         data-testid={`battery-number-${batteryNumber}`}
       >
         {batteryNumber}
       </div>
       
       {/* Battery Icon */}
-      <div className="flex-shrink-0 mx-4">
-        <div className="w-20 h-8 border-2 border-battery-red bg-display-black relative rounded-sm">
+      <div className="flex-shrink-0 mx-6">
+        <div className="w-32 h-12 border-2 border-battery-red bg-display-black relative rounded-sm">
           {/* Battery Fill */}
           <div 
             className="battery-fill h-full rounded-sm" 
@@ -29,15 +29,15 @@ export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel 
             data-testid={`battery-fill-${batteryNumber}`}
           />
           {/* Battery Terminal */}
-          <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm" />
+          <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-2 h-6 bg-battery-red rounded-r-sm" />
         </div>
       </div>
       
       {/* AMPS Section */}
-      <div className="flex flex-col items-center mx-6">
-        <div className="text-battery-yellow text-lg font-bold">AMPS</div>
+      <div className="flex flex-col items-center mx-8">
+        <div className="text-battery-yellow text-2xl font-bold">AMPS</div>
         <div 
-          className="text-battery-green text-2xl font-bold"
+          className="text-battery-green text-3xl font-bold"
           data-testid={`battery-amps-${batteryNumber}`}
         >
           {amperage.toFixed(1)}
@@ -45,10 +45,10 @@ export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel 
       </div>
       
       {/* VOLTS Section */}
-      <div className="flex flex-col items-center mx-6">
-        <div className="text-battery-yellow text-lg font-bold">VOLTS</div>
+      <div className="flex flex-col items-center mx-8">
+        <div className="text-battery-yellow text-2xl font-bold">VOLTS</div>
         <div 
-          className="text-battery-green text-2xl font-bold"
+          className="text-battery-green text-3xl font-bold"
           data-testid={`battery-volts-${batteryNumber}`}
         >
           {voltage.toFixed(2)}
