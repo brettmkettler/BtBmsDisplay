@@ -5,18 +5,18 @@
 
 :root {
   --background: hsl(0, 0%, 0%);
-  --foreground: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 100%, 50%);
   --card: hsl(0, 0%, 0%);
-  --card-foreground: hsl(0, 0%, 100%);
+  --card-foreground: hsl(0, 100%, 50%);
   --popover: hsl(0, 0%, 0%);
-  --popover-foreground: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 100%, 50%);
   --primary: hsl(0, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(60, 100%, 50%);
+  --secondary: hsl(0, 100%, 50%);
   --secondary-foreground: hsl(0, 0%, 0%);
   --muted: hsl(0, 0%, 20%);
-  --muted-foreground: hsl(0, 0%, 60%);
-  --accent: hsl(120, 100%, 50%);
+  --muted-foreground: hsl(0, 100%, 50%);
+  --accent: hsl(0, 100%, 50%);
   --accent-foreground: hsl(0, 0%, 0%);
   --destructive: hsl(0, 100%, 50%);
   --destructive-foreground: hsl(0, 0%, 100%);
@@ -24,8 +24,8 @@
   --input: hsl(0, 0%, 10%);
   --ring: hsl(0, 100%, 50%);
   --battery-red: hsl(0, 100%, 50%);
-  --battery-yellow: hsl(60, 100%, 50%);
-  --battery-green: hsl(120, 100%, 50%);
+  --battery-yellow: hsl(0, 100%, 50%);
+  --battery-green: hsl(0, 100%, 50%);
   --display-black: hsl(0, 0%, 0%);
   --font-mono-display: 'Courier New', monospace;
   --radius: 0.5rem;
@@ -33,18 +33,18 @@
 
 .dark {
   --background: hsl(0, 0%, 0%);
-  --foreground: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 100%, 50%);
   --card: hsl(0, 0%, 0%);
-  --card-foreground: hsl(0, 0%, 100%);
+  --card-foreground: hsl(0, 100%, 50%);
   --popover: hsl(0, 0%, 0%);
-  --popover-foreground: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 100%, 50%);
   --primary: hsl(0, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(60, 100%, 50%);
+  --secondary: hsl(0, 100%, 50%);
   --secondary-foreground: hsl(0, 0%, 0%);
   --muted: hsl(0, 0%, 20%);
-  --muted-foreground: hsl(0, 0%, 60%);
-  --accent: hsl(120, 100%, 50%);
+  --muted-foreground: hsl(0, 100%, 50%);
+  --accent: hsl(0, 100%, 50%);
   --accent-foreground: hsl(0, 0%, 0%);
   --destructive: hsl(0, 100%, 50%);
   --destructive-foreground: hsl(0, 0%, 100%);
@@ -52,8 +52,8 @@
   --input: hsl(0, 0%, 10%);
   --ring: hsl(0, 100%, 50%);
   --battery-red: hsl(0, 100%, 50%);
-  --battery-yellow: hsl(60, 100%, 50%);
-  --battery-green: hsl(120, 100%, 50%);
+  --battery-yellow: hsl(0, 100%, 50%);
+  --battery-green: hsl(0, 100%, 50%);
   --display-black: hsl(0, 0%, 0%);
   --font-mono-display: 'Courier New', monospace;
 }
@@ -72,11 +72,11 @@
 
 @layer components {
   .battery-gradient {
-    background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
+    background: var(--battery-red);
   }
 
   .battery-fill {
-    background: linear-gradient(90deg, var(--battery-red) 0%, var(--battery-yellow) 50%, var(--battery-green) 100%);
+    background: var(--battery-red);
     transition: width 0.3s ease;
   }
 
