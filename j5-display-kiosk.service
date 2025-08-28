@@ -1,0 +1,24 @@
+[Unit]
+Description=J5 Console Display Kiosk
+After=network.target j5-console.service
+Wants=network.target
+Requires=j5-console.service
+
+[Service]
+Type=simple
+User=seanfuchs
+Group=seanfuchs
+WorkingDirectory=/home/seanfuchs/Desktop/j5_console/BtBmsDisplay
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=DISPLAY=:0
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=j5-display
+
+[Install]
+WantedBy=multi-user.target
