@@ -1,0 +1,585 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Johnny Five - Battery Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#111827',
+                        'dark-card': '#1F2937',
+                        'dark-border': '#374151',
+                        'battery-empty': '#DC2626',
+                        'battery-low': '#F59E0B', 
+                        'battery-medium': '#10B981',
+                        'battery-full': '#059669'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark-bg text-gray-100 font-inter">
+    
+    <!-- @COMPONENT: HeaderComponent -->
+    <header class="bg-dark-card border-b border-dark-border px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-car text-red-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-red-500">LEFT TRACKDRIVE BATTERY STATUS</h1>
+                    <p class="text-sm text-gray-400" data-bind="system.location">Johnny Five - Track Drive System</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- @STATE: connectionStatus:string = 'connected' -->
+                <div class="flex items-center space-x-2" data-mock="true">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-gray-300" data-bind="connection.status">BMS Connected</span>
+                </div>
+                <div class="text-sm text-gray-400" data-bind="system.timestamp">
+                    <i class="far fa-clock mr-1"></i>
+                    <span data-mock="true">14:32:05</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: HeaderComponent -->
+
+    <div class="container mx-auto px-6 py-6 max-w-7xl">
+        
+        <!-- @COMPONENT: SystemOverviewComponent -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Total Voltage</p>
+                        <p class="text-2xl font-bold text-blue-400" data-bind="battery.totalVoltage" data-mock="true">28.4V</p>
+                    </div>
+                    <i class="fas fa-bolt text-blue-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Current Draw</p>
+                        <p class="text-2xl font-bold text-yellow-400" data-bind="battery.current" data-mock="true">12.5A</p>
+                    </div>
+                    <i class="fas fa-tachometer-alt text-yellow-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Pack SOC</p>
+                        <p class="text-2xl font-bold text-green-400" data-bind="battery.soc" data-mock="true">87%</p>
+                    </div>
+                    <i class="fas fa-battery-three-quarters text-green-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">System Status</p>
+                        <p class="text-2xl font-bold text-green-400" data-bind="system.status" data-mock="true">HEALTHY</p>
+                    </div>
+                    <i class="fas fa-check-circle text-green-400 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: SystemOverviewComponent -->
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            
+            <!-- @COMPONENT: BatteryGridComponent -->
+            <div class="xl:col-span-2">
+                <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                    <h2 class="text-xl font-bold mb-6 flex items-center">
+                        <i class="fas fa-th-large mr-2 text-blue-400"></i>
+                        Individual Cell Status
+                    </h2>
+                    
+                    <!-- @MAP: batteryData.cells.map(cell => ( -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- Battery Cell 1 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 1</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell1.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell1.voltage">3.45V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell1.percentage">94%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 94%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell1.min">3.42V</span></span>
+                                    <span>Max: <span data-bind="cell1.max">3.48V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 2 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 2</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell2.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell2.voltage">3.43V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell2.percentage">92%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell2.min">3.40V</span></span>
+                                    <span>Max: <span data-bind="cell2.max">3.46V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 3 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 3</span>
+                                <span class="text-xs bg-yellow-600 text-white px-2 py-1 rounded" data-bind="cell3.status">WARN</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-yellow-400" data-bind="cell3.voltage">3.28V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell3.percentage">79%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 79%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell3.min">3.25V</span></span>
+                                    <span>Max: <span data-bind="cell3.max">3.31V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 4 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 4</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell4.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell4.voltage">3.41V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell4.percentage">90%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell4.min">3.38V</span></span>
+                                    <span>Max: <span data-bind="cell4.max">3.44V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 5 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 5</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell5.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell5.voltage">3.46V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell5.percentage">95%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell5.min">3.43V</span></span>
+                                    <span>Max: <span data-bind="cell5.max">3.49V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 6 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 6</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell6.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell6.voltage">3.44V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell6.percentage">93%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 93%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell6.min">3.41V</span></span>
+                                    <span>Max: <span data-bind="cell6.max">3.47V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 7 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 7</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell7.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell7.voltage">3.42V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell7.percentage">91%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 91%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell7.min">3.39V</span></span>
+                                    <span>Max: <span data-bind="cell7.max">3.45V</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Battery Cell 8 -->
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-300">Cell 8</span>
+                                <span class="text-xs bg-green-600 text-white px-2 py-1 rounded" data-bind="cell8.status">OK</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-lg font-bold text-green-400" data-bind="cell8.voltage">3.40V</span>
+                                    <span class="text-xs text-gray-400" data-bind="cell8.percentage">89%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 89%"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <div class="flex justify-between">
+                                    <span>Min: <span data-bind="cell8.min">3.37V</span></span>
+                                    <span>Max: <span data-bind="cell8.max">3.43V</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+
+                    <!-- BMS Status Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border">
+                            <h3 class="font-semibold mb-3 flex items-center">
+                                <i class="fas fa-microchip mr-2 text-blue-400"></i>
+                                BMS 1 (Cells 1-4)
+                            </h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="text-green-400" data-bind="bms1.status" data-mock="true">Connected</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Temperature:</span>
+                                    <span data-bind="bms1.temperature" data-mock="true">24°C</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Balance:</span>
+                                    <span class="text-green-400" data-bind="bms1.balance" data-mock="true">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 border border-dark-border">
+                            <h3 class="font-semibold mb-3 flex items-center">
+                                <i class="fas fa-microchip mr-2 text-blue-400"></i>
+                                BMS 2 (Cells 5-8)
+                            </h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="text-green-400" data-bind="bms2.status" data-mock="true">Connected</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Temperature:</span>
+                                    <span data-bind="bms2.temperature" data-mock="true">26°C</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Balance:</span>
+                                    <span class="text-green-400" data-bind="bms2.balance" data-mock="true">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: BatteryGridComponent -->
+
+            <!-- @COMPONENT: RightSidebarComponent -->
+            <div class="space-y-6">
+                
+                <!-- Real-time Chart -->
+                <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                    <h3 class="font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-green-400"></i>
+                        Real-time Monitoring
+                    </h3>
+                    <!-- @FUNCTIONALITY: This chart should implement real-time data visualization using Chart.js or similar -->
+                    <div class="h-48 bg-gray-800 rounded-lg border border-gray-600 flex items-center justify-center" data-mock="true">
+                        <div class="text-center text-gray-400">
+                            <i class="fas fa-chart-line text-3xl mb-2"></i>
+                            <p class="text-sm">Live Voltage Chart</p>
+                            <p class="text-xs">WebSocket Integration Required</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="mt-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Avg Cell Voltage:</span>
+                            <span class="font-medium" data-bind="battery.avgVoltage" data-mock="true">3.41V</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Voltage Delta:</span>
+                            <span class="font-medium" data-bind="battery.deltaVoltage" data-mock="true">0.18V</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Power Draw:</span>
+                            <span class="font-medium" data-bind="battery.power" data-mock="true">355W</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Panel -->
+                <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                    <h3 class="font-semibold mb-4 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2 text-yellow-400"></i>
+                        System Alerts
+                    </h3>
+                    
+                    <!-- @MAP: alerts.map(alert => ( -->
+                    <div class="space-y-3" data-mock="true">
+                        <div class="flex items-start space-x-3 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 mt-1"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-yellow-400" data-bind="alert.title">Cell 3 Low Voltage</p>
+                                <p class="text-xs text-gray-400" data-bind="alert.description">Cell voltage below recommended threshold</p>
+                                <p class="text-xs text-gray-500 mt-1" data-bind="alert.timestamp">2 minutes ago</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-3 p-3 bg-blue-900/20 border border-blue-600/30 rounded-lg">
+                            <i class="fas fa-info-circle text-blue-400 mt-1"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-blue-400" data-bind="alert.title">BMS Balancing Active</p>
+                                <p class="text-xs text-gray-400" data-bind="alert.description">Cell balancing in progress</p>
+                                <p class="text-xs text-gray-500 mt-1" data-bind="alert.timestamp">5 minutes ago</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+                    
+                    <div class="mt-4 pt-4 border-t border-dark-border">
+                        <button class="w-full text-sm text-gray-400 hover:text-white transition-colors" data-event="click:clearAlerts">
+                            <i class="fas fa-trash mr-1"></i>
+                            Clear All Alerts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Historical Data -->
+                <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                    <h3 class="font-semibold mb-4 flex items-center">
+                        <i class="fas fa-history mr-2 text-purple-400"></i>
+                        Historical Data
+                    </h3>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Last 24 Hours:</span>
+                            <button class="text-blue-400 hover:text-blue-300 text-xs" data-event="click:viewHistorical">View</button>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Min Voltage:</span>
+                            <span data-bind="history.minVoltage" data-mock="true">3.22V</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Max Current:</span>
+                            <span data-bind="history.maxCurrent" data-mock="true">18.7A</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Cycles Today:</span>
+                            <span data-bind="history.cycles" data-mock="true">3</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-dark-border">
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg transition-colors" data-event="click:exportData">
+                            <i class="fas fa-download mr-2"></i>
+                            Export Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Controls -->
+                <div class="bg-dark-card rounded-lg p-6 border border-dark-border">
+                    <h3 class="font-semibold mb-4 flex items-center">
+                        <i class="fas fa-cogs mr-2 text-gray-400"></i>
+                        System Controls
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <button class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-4 rounded-lg transition-colors flex items-center justify-center" data-event="click:reconnectBMS">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Reconnect BMS
+                        </button>
+                        
+                        <button class="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-sm py-2 px-4 rounded-lg transition-colors flex items-center justify-center" data-event="click:balanceCells">
+                            <i class="fas fa-balance-scale mr-2"></i>
+                            Force Balance
+                        </button>
+                        
+                        <button class="w-full bg-gray-600 hover:bg-gray-700 text-white text-sm py-2 px-4 rounded-lg transition-colors flex items-center justify-center" data-event="click:resetSystem">
+                            <i class="fas fa-power-off mr-2"></i>
+                            Reset System
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: RightSidebarComponent -->
+        </div>
+    </div>
+
+    <!-- @COMPONENT: FooterComponent -->
+    <footer class="bg-dark-card border-t border-dark-border px-6 py-4 mt-8">
+        <div class="flex flex-col md:flex-row items-center justify-between text-sm text-gray-400">
+            <div class="flex items-center space-x-4 mb-2 md:mb-0">
+                <span data-bind="system.version" data-mock="true">Johnny Five BMS v2.1.0</span>
+                <span>•</span>
+                <span data-bind="system.uptime" data-mock="true">Uptime: 2d 14h 32m</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span data-bind="hardware.device" data-mock="true">Raspberry Pi 4B</span>
+                <span>•</span>
+                <span data-bind="hardware.memory" data-mock="true">RAM: 1.2GB / 4GB</span>
+                <span>•</span>
+                <span data-bind="hardware.temperature" data-mock="true">CPU: 45°C</span>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: FooterComponent -->
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time data updates
+        // TODO: Implement Chart.js integration for historical data visualization
+        // TODO: Implement alert system with notification sounds
+        // TODO: Implement data logging and export functionality
+        // TODO: Implement BMS communication protocols
+        
+        (function() {
+            // WebSocket connection simulation
+            // In production, this would connect to the Python backend via WebSocket
+            function simulateRealTimeUpdates() {
+                // Simulate real-time data updates
+                setInterval(() => {
+                    // Update timestamp
+                    const timeElement = document.querySelector('[data-bind="system.timestamp"] span');
+                    if (timeElement) {
+                        timeElement.textContent = new Date().toLocaleTimeString();
+                    }
+                    
+                    // TODO: Update battery data from WebSocket
+                    // TODO: Update charts with new data points
+                    // TODO: Check for alert conditions
+                }, 1000);
+            }
+
+            // Initialize the dashboard
+            function initializeDashboard() {
+                console.log('Battery Monitoring Dashboard Initialized');
+                simulateRealTimeUpdates();
+                
+                // TODO: Initialize WebSocket connection
+                // TODO: Initialize Chart.js charts
+                // TODO: Setup alert notification system
+                // TODO: Initialize data logging
+            }
+
+            // Event handlers for system controls
+            document.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-event]');
+                if (!target) return;
+                
+                const [event, handler] = target.dataset.event.split(':');
+                
+                if (event === 'click') {
+                    switch (handler) {
+                        case 'reconnectBMS':
+                            console.log('Reconnecting to BMS...');
+                            // TODO: Implement BMS reconnection logic
+                            break;
+                        case 'balanceCells':
+                            console.log('Forcing cell balance...');
+                            // TODO: Implement cell balancing command
+                            break;
+                        case 'resetSystem':
+                            console.log('Resetting system...');
+                            // TODO: Implement system reset logic
+                            break;
+                        case 'clearAlerts':
+                            console.log('Clearing alerts...');
+                            // TODO: Implement alert clearing logic
+                            break;
+                        case 'exportData':
+                            console.log('Exporting historical data...');
+                            // TODO: Implement data export functionality
+                            break;
+                        case 'viewHistorical':
+                            console.log('Opening historical data view...');
+                            // TODO: Implement historical data modal/page
+                            break;
+                    }
+                }
+            });
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeDashboard);
+            } else {
+                initializeDashboard();
+            }
+        })();
+    </script>
+</body>
+</html>

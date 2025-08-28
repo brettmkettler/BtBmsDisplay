@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Johnny Five Battery Status</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'battery-red': '#FF0000',
+                        'battery-yellow': '#FFFF00', 
+                        'battery-green': '#00FF00',
+                        'display-black': '#000000'
+                    },
+                    fontFamily: {
+                        'mono-display': ['Courier New', 'monospace']
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .battery-gradient {
+            background: linear-gradient(90deg, #FF0000 0%, #FFFF00 50%, #00FF00 100%);
+        }
+        .battery-fill {
+            background: linear-gradient(90deg, #FF0000 0%, #FFFF00 50%, #00FF00 100%);
+            transition: width 0.3s ease;
+        }
+        .scrollable-container {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        
+        /* Custom scrollbar for webkit browsers */
+        .scrollable-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-container::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        .scrollable-container::-webkit-scrollbar-thumb {
+            background: #FF0000;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-display-black text-white font-mono-display overflow-hidden">
+    <!-- @COMPONENT: BatteryMonitoringDashboard -->
+    <div class="w-full h-screen flex flex-col" style="height: 100vh; width: 100vw;">
+        
+        <!-- @COMPONENT: BatteryList -->
+        <div class="flex-1 p-4 scrollable-container">
+            <div class="space-y-4" id="batteryContainer">
+                <!-- @MAP: batteries.map((battery, index) => ( -->
+                
+                <!-- Battery 1 -->
+                <!-- @COMPONENT: BatteryListItem [batteryNumber: 1, voltage: 3.45, amperage: 12.3, chargeLevel: 85] -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <!-- Battery Number -->
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center" data-bind="battery.number">
+                        1
+                    </div>
+                    
+                    <!-- Battery Icon -->
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <!-- Battery Fill -->
+                            <div class="battery-fill h-full rounded-sm" style="width: 85%" data-bind="battery.chargeLevel"></div>
+                            <!-- Battery Terminal -->
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- AMPS Section -->
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold" data-bind="battery.amperage">12.3</div>
+                    </div>
+                    
+                    <!-- VOLTS Section -->
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold" data-bind="battery.voltage">3.45</div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: BatteryListItem -->
+                
+                <!-- Battery 2 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">2</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 92%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">11.8</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.52</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 3 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">3</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 78%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">13.1</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.38</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 4 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">4</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 88%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">12.7</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.48</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 5 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">5</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 65%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">14.2</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.28</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 6 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">6</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 95%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">11.5</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.58</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 7 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">7</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 72%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">13.8</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.35</div>
+                    </div>
+                </div>
+                
+                <!-- Battery 8 -->
+                <div class="border-2 border-battery-red rounded-lg p-4 flex items-center justify-between bg-black" data-mock="true">
+                    <div class="text-battery-red text-4xl font-bold w-16 text-center">8</div>
+                    <div class="flex-shrink-0 mx-4">
+                        <div class="w-20 h-8 border-2 border-battery-red bg-black relative rounded-sm">
+                            <div class="battery-fill h-full rounded-sm" style="width: 81%"></div>
+                            <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-3 bg-battery-red rounded-r-sm"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">AMPS</div>
+                        <div class="text-battery-green text-2xl font-bold">12.9</div>
+                    </div>
+                    <div class="flex flex-col items-center mx-6">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-bold">3.42</div>
+                    </div>
+                </div>
+                
+                <!-- @END_MAP )) -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: BatteryList -->
+        
+    </div>
+    <!-- @END_COMPONENT: BatteryMonitoringDashboard -->
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time BMS data
+        // TODO: Implement data persistence and logging
+        // TODO: Implement alert system for low voltage/high current conditions
+        
+        (function() {
+            // Simulated real-time data updates for demonstration
+            // In production, this would connect to WebSocket or REST API
+            function updateBatteryData() {
+                const batteries = document.querySelectorAll('[data-mock="true"]');
+                
+                batteries.forEach((battery, index) => {
+                    // Simulate minor voltage fluctuations
+                    const voltageElement = battery.querySelector('[data-bind="battery.voltage"]');
+                    const amperageElement = battery.querySelector('[data-bind="battery.amperage"]');
+                    const fillElement = battery.querySelector('.battery-fill');
+                    
+                    if (voltageElement && amperageElement && fillElement) {
+                        // Simulate realistic LiFePO4 voltage range (3.2V - 3.65V)
+                        const baseVoltage = 3.20 + Math.random() * 0.45;
+                        const baseAmperage = 10.0 + Math.random() * 5.0;
+                        
+                        voltageElement.textContent = baseVoltage.toFixed(2);
+                        amperageElement.textContent = baseAmperage.toFixed(1);
+                        
+                        // Calculate charge percentage based on LiFePO4 voltage curve
+                        const chargePercent = Math.max(0, Math.min(100, 
+                            ((baseVoltage - 2.5) / (3.65 - 2.5)) * 100
+                        ));
+                        fillElement.style.width = `${chargePercent}%`;
+                    }
+                });
+            }
+            
+            // Update every 2 seconds for demonstration
+            setInterval(updateBatteryData, 2000);
+            
+            // Touch scroll optimization
+            const container = document.querySelector('.scrollable-container');
+            if (container) {
+                container.addEventListener('touchstart', function(e) {
+                    // Allow natural touch scrolling
+                }, { passive: true });
+                
+                container.addEventListener('touchmove', function(e) {
+                    // Prevent horizontal scrolling
+                    if (Math.abs(e.touches[0].clientX - e.touches[0].clientY) > 
+                        Math.abs(e.touches[0].clientY - e.touches[0].clientX)) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        })();
+    </script>
+</body>
+</html>

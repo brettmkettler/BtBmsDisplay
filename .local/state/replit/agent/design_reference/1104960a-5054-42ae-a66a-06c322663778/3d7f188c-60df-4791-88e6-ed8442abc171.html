@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Monitoring System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'mono': ['Courier New', 'monospace'],
+                    },
+                    colors: {
+                        'monitor-red': '#FF0000',
+                        'monitor-yellow': '#FFFF00', 
+                        'monitor-green': '#00FF00',
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .battery-gradient {
+            background: linear-gradient(to right, #FF0000 0%, #FF4500 25%, #FFA500 50%, #FFFF00 75%, #00FF00 100%);
+        }
+        
+        .battery-fill {
+            transition: width 0.3s ease-in-out;
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        /* Custom scrollbar for the monitoring system */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-mono overflow-hidden">
+    <!-- Main Container for 1440x2560 portrait -->
+    <div class="w-screen h-screen bg-black flex flex-col" style="max-width: 1440px; max-height: 2560px; margin: 0 auto;">
+        
+        <!-- Battery Cells Section -->
+        <div class="flex-1 px-8 py-6 space-y-6">
+            <!-- @COMPONENT: BatteryCell [cellNumber, voltage, chargeLevel] -->
+            <div id="battery-grid" class="space-y-6">
+                <!-- Battery Cell 1 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <!-- Battery Number -->
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">1</span>
+                        
+                        <!-- Battery Icon with Gradient Fill -->
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <!-- Battery Terminal -->
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            
+                            <!-- Battery Fill with Gradient -->
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 85%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Voltage Display -->
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.42</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 2 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">2</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 78%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.38</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 3 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">3</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 92%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.51</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 4 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">4</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 88%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.47</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 5 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">5</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 81%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.41</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 6 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">6</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 76%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.36</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 7 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">7</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 94%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.53</div>
+                    </div>
+                </div>
+                
+                <!-- Battery Cell 8 -->
+                <div class="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-black">
+                    <div class="flex items-center space-x-6">
+                        <span class="text-monitor-red text-6xl font-bold glow-text" data-bind="cellNumber">8</span>
+                        <div class="relative w-48 h-16 border-2 border-white rounded-md bg-black">
+                            <div class="absolute -right-2 top-1/2 transform -translate-y-1/2 w-2 h-8 bg-white rounded-r"></div>
+                            <div class="absolute inset-1 rounded">
+                                <div class="battery-gradient h-full rounded battery-fill" style="width: 89%;" data-bind="chargeLevel"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-monitor-yellow text-2xl font-bold">VOLTS</div>
+                        <div class="text-monitor-green text-4xl font-bold glow-text" data-bind="voltage" data-mock="true">3.48</div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: BatteryCell -->
+        </div>
+        
+        <!-- Current/Amperage Display -->
+        <!-- @COMPONENT: CurrentDisplay [currentValue] -->
+        <div class="px-8 py-6 border-t border-gray-700">
+            <div class="text-center">
+                <div class="text-monitor-yellow text-4xl font-bold mb-2">AMPS</div>
+                <div class="text-monitor-green text-8xl font-bold glow-text" data-bind="currentValue" data-mock="true">12.4</div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: CurrentDisplay -->
+        
+        <!-- Status Indicator -->
+        <div class="px-8 py-4 text-center">
+            <div class="inline-flex items-center space-x-2">
+                <div class="w-4 h-4 bg-monitor-green rounded-full animate-pulse"></div>
+                <span class="text-monitor-green text-xl font-bold">SYSTEM ACTIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time battery data
+        // TODO: Add data persistence and logging functionality
+        // TODO: Implement alert system for low voltage/high current conditions
+        
+        (function() {
+            // Mock data simulation for demonstration
+            const batteryData = [
+                { voltage: 3.42, chargeLevel: 85 },
+                { voltage: 3.38, chargeLevel: 78 },
+                { voltage: 3.51, chargeLevel: 92 },
+                { voltage: 3.47, chargeLevel: 88 },
+                { voltage: 3.41, chargeLevel: 81 },
+                { voltage: 3.36, chargeLevel: 76 },
+                { voltage: 3.53, chargeLevel: 94 },
+                { voltage: 3.48, chargeLevel: 89 }
+            ];
+            
+            let currentAmps = 12.4;
+            
+            // Simulate real-time data updates
+            function updateBatteryDisplay() {
+                // TODO: Replace with actual WebSocket data reception
+                // Simulate slight voltage fluctuations
+                batteryData.forEach((battery, index) => {
+                    const fluctuation = (Math.random() - 0.5) * 0.02;
+                    battery.voltage += fluctuation;
+                    battery.voltage = Math.max(2.5, Math.min(3.65, battery.voltage));
+                    battery.chargeLevel = ((battery.voltage - 2.5) / (3.65 - 2.5)) * 100;
+                });
+                
+                // Update current with slight variations
+                currentAmps += (Math.random() - 0.5) * 0.5;
+                currentAmps = Math.max(0, Math.min(50, currentAmps));
+                
+                // Update DOM elements
+                document.querySelectorAll('[data-bind="voltage"]').forEach((element, index) => {
+                    if (batteryData[index]) {
+                        element.textContent = batteryData[index].voltage.toFixed(2);
+                    }
+                });
+                
+                document.querySelectorAll('[data-bind="chargeLevel"]').forEach((element, index) => {
+                    if (batteryData[index]) {
+                        element.style.width = `${batteryData[index].chargeLevel}%`;
+                    }
+                });
+                
+                document.querySelector('[data-bind="currentValue"]').textContent = currentAmps.toFixed(1);
+            }
+            
+            // Update every 500ms for real-time feel
+            setInterval(updateBatteryDisplay, 500);
+            
+            // Initial update
+            updateBatteryDisplay();
+            
+            // Touch interaction for mobile/tablet
+            document.addEventListener('touchstart', function(e) {
+                // TODO: Implement touch interactions for settings/calibration
+            });
+            
+            // Handle orientation changes
+            window.addEventListener('orientationchange', function() {
+                // TODO: Adjust layout for orientation changes if needed
+            });
+        })();
+    </script>
+</body>
+</html>

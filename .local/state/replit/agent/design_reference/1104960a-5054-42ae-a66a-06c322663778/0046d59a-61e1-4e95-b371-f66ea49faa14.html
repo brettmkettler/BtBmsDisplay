@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Johnny Five Battery Status</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'battery-red': '#FF0000',
+                    'battery-yellow': '#FFFF00',
+                    'battery-green': '#00FF00',
+                    'battery-orange': '#FFA500',
+                    'battery-dark-green': '#008000'
+                },
+                fontFamily: {
+                    'mono': ['Monaco', 'Menlo', 'Courier New', 'monospace']
+                },
+                aspectRatio: {
+                    'portrait': '1440 / 2560'
+                }
+            }
+        }
+    };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        .battery-gradient {
+            background: linear-gradient(to right, 
+                #FF0000 0%, 
+                #FFA500 25%, 
+                #FFFF00 50%, 
+                #00FF00 75%, 
+                #008000 100%);
+        }
+        
+        .battery-cell {
+            background: linear-gradient(to bottom, 
+                rgba(255, 0, 0, 0.8) 0%, 
+                rgba(255, 165, 0, 0.8) 25%, 
+                rgba(255, 255, 0, 0.8) 50%, 
+                rgba(0, 255, 0, 0.8) 75%, 
+                rgba(0, 128, 0, 0.8) 100%);
+        }
+        
+        .glow-red {
+            text-shadow: 0 0 10px #FF0000, 0 0 20px #FF0000, 0 0 30px #FF0000;
+        }
+        
+        .glow-yellow {
+            text-shadow: 0 0 10px #FFFF00, 0 0 20px #FFFF00;
+        }
+        
+        .glow-green {
+            text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00;
+        }
+        
+        .retro-border {
+            border: 2px solid #FF0000;
+            box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+        
+        .data-panel {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-mono overflow-hidden h-screen">
+    <!-- @COMPONENT: BatteryMonitorDashboard [main container] -->
+    <div class="w-full h-screen flex flex-col p-4 max-w-[1440px] mx-auto" style="aspect-ratio: 1440/2560;">
+        
+        <!-- Header Section -->
+        <!-- @COMPONENT: HeaderTitle [system title and status] -->
+        <header class="text-center mb-8">
+            <h1 class="text-battery-red text-6xl font-black glow-red mb-4" style="font-family: 'Orbitron', monospace;">
+                LEFT TRACKDRIVE BATTERY STATUS
+            </h1>
+            <div class="text-battery-green text-2xl glow-green">
+                <span data-bind="system.status" data-mock="true">SYSTEM ACTIVE</span>
+                <span class="ml-8 text-battery-yellow glow-yellow">
+                    TIME: <span data-bind="system.timestamp" data-mock="true">14:23:47</span>
+                </span>
+            </div>
+        </header>
+        <!-- @END_COMPONENT: HeaderTitle -->
+
+        <!-- Main Dashboard Grid -->
+        <div class="flex-1 grid grid-cols-2 gap-6">
+            
+            <!-- Left Column - Battery Cells 1-4 -->
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h2 class="text-battery-yellow text-3xl glow-yellow mb-4 font-bold">BMS 1 - CELLS 1-4</h2>
+                </div>
+                
+                <!-- @MAP: batteries.slice(0, 4).map((battery, index) => ( -->
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 1</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.65V</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Battery Visualization -->
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 95%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">95%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 2</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.62V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 87%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">87%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 3</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.63V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 89%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">89%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 4</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.64V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 92%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">92%</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_MAP -->
+            </div>
+
+            <!-- Right Column - Battery Cells 5-8 -->
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h2 class="text-battery-yellow text-3xl glow-yellow mb-4 font-bold">BMS 2 - CELLS 5-8</h2>
+                </div>
+                
+                <!-- @MAP: batteries.slice(4, 8).map((battery, index) => ( -->
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 5</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.61V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 85%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">85%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 6</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.65V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 95%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">95%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 7</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.60V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 83%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">83%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-panel p-4 rounded-lg retro-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-battery-red text-4xl font-bold glow-red">CELL 8</span>
+                        <div class="text-right">
+                            <div class="text-battery-yellow text-xl glow-yellow">VOLTS</div>
+                            <div class="text-battery-green text-3xl font-bold glow-green" data-bind="battery.voltage" data-mock="true">3.63V</div>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-16 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600">
+                        <div class="battery-cell h-full rounded-lg" style="width: 89%;" data-bind="battery.chargePercentage" data-mock="true"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-white font-bold text-lg drop-shadow-lg" data-bind="battery.soc" data-mock="true">89%</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_MAP -->
+            </div>
+        </div>
+
+        <!-- Bottom Status Panel -->
+        <!-- @COMPONENT: StatusPanel [system metrics and amperage] -->
+        <footer class="mt-8">
+            <div class="grid grid-cols-3 gap-6">
+                <!-- Current Draw -->
+                <div class="data-panel p-6 rounded-lg retro-border text-center">
+                    <div class="text-battery-yellow text-2xl glow-yellow mb-2">AMPS</div>
+                    <div class="text-battery-green text-5xl font-bold glow-green" data-bind="system.current" data-mock="true">12.5A</div>
+                    <div class="text-battery-red text-lg glow-red mt-2" data-mock="true">DISCHARGE</div>
+                </div>
+
+                <!-- Pack Voltage -->
+                <div class="data-panel p-6 rounded-lg retro-border text-center">
+                    <div class="text-battery-yellow text-2xl glow-yellow mb-2">PACK VOLTS</div>
+                    <div class="text-battery-green text-5xl font-bold glow-green" data-bind="system.packVoltage" data-mock="true">29.0V</div>
+                    <div class="text-battery-green text-lg glow-green mt-2" data-mock="true">NOMINAL</div>
+                </div>
+
+                <!-- System Status -->
+                <div class="data-panel p-6 rounded-lg retro-border text-center">
+                    <div class="text-battery-yellow text-2xl glow-yellow mb-2">STATUS</div>
+                    <div class="text-battery-green text-3xl font-bold glow-green" data-bind="system.overallStatus" data-mock="true">HEALTHY</div>
+                    <div class="text-battery-green text-lg glow-green mt-2" data-mock="true">ALL CELLS OK</div>
+                </div>
+            </div>
+
+            <!-- Connection Status -->
+            <div class="mt-6 text-center">
+                <span class="text-battery-yellow glow-yellow text-xl">BMS CONNECTION: </span>
+                <span class="text-battery-green glow-green text-xl" data-bind="bms.connectionStatus" data-mock="true">ACTIVE</span>
+                <span class="ml-8 text-battery-yellow glow-yellow text-xl">UPDATE RATE: </span>
+                <span class="text-battery-green glow-green text-xl" data-mock="true">1.0 Hz</span>
+            </div>
+        </footer>
+        <!-- @END_COMPONENT: StatusPanel -->
+    </div>
+    <!-- @END_COMPONENT: BatteryMonitorDashboard -->
+
+    <script>
+        // TODO: Implement WebSocket connections for real-time BMS data
+        // TODO: Add data logging functionality
+        // TODO: Implement alert system for critical battery conditions
+        // TODO: Add touch interaction handlers for manual data refresh
+        
+        (function() {
+            // Mock data update simulation for demonstration
+            let updateInterval;
+            
+            function updateMockData() {
+                // Simulate fluctuating battery data
+                const cells = document.querySelectorAll('[data-bind*="battery"]');
+                const mockVoltages = [3.65, 3.62, 3.63, 3.64, 3.61, 3.65, 3.60, 3.63];
+                
+                // TODO: Replace with actual WebSocket data reception
+                console.log('Mock data update - would receive real BMS data here');
+            }
+            
+            // Update timestamp
+            function updateTimestamp() {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+                // TODO: Bind to actual timestamp display element
+                console.log(`Current time: ${timeStr}`);
+            }
+            
+            // Initialize mock updates (remove in production)
+            updateInterval = setInterval(() => {
+                updateMockData();
+                updateTimestamp();
+            }, 1000);
+            
+            // Touch interaction handlers
+            document.addEventListener('touchstart', function(e) {
+                // TODO: Implement touch feedback for battery cell selection
+                console.log('Touch interaction detected');
+            });
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', function() {
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

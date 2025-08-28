@@ -1,0 +1,461 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOHNNY FIVE - BATTERY MONITORING SYSTEM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'mono': ['JetBrains Mono', 'Courier New', 'monospace'],
+                },
+                colors: {
+                    'neon-cyan': '#00FFFF',
+                    'neon-magenta': '#FF00FF',
+                    'neon-yellow': '#FFFF00',
+                    'neon-green': '#00FF00',
+                    'neon-orange': '#FF8800',
+                    'neon-red': '#FF0044',
+                    'neon-purple': '#8800FF',
+                    'neon-blue': '#0088FF',
+                    'dark-bg': '#000000',
+                    'dark-panel': '#111111',
+                },
+                animation: {
+                    'pulse-neon': 'pulse-neon 2s ease-in-out infinite alternate',
+                    'glow': 'glow 2s ease-in-out infinite alternate',
+                    'scanline': 'scanline 2s linear infinite',
+                    'flicker': 'flicker 0.15s infinite linear',
+                },
+                keyframes: {
+                    'pulse-neon': {
+                        'from': { 'text-shadow': '0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor' },
+                        'to': { 'text-shadow': '0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor' }
+                    },
+                    'glow': {
+                        'from': { 'box-shadow': '0 0 10px currentColor, inset 0 0 10px currentColor' },
+                        'to': { 'box-shadow': '0 0 20px currentColor, inset 0 0 20px currentColor' }
+                    },
+                    'scanline': {
+                        '0%': { 'transform': 'translateY(-100%)' },
+                        '100%': { 'transform': 'translateY(100vh)' }
+                    },
+                    'flicker': {
+                        '0%, 100%': { 'opacity': '1' },
+                        '50%': { 'opacity': '0.98' }
+                    }
+                }
+            }
+        }
+    };
+    </script>
+    <style>
+        .neon-border {
+            border: 2px solid;
+            box-shadow: 0 0 10px currentColor, inset 0 0 10px currentColor;
+        }
+        
+        .text-glow {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+        }
+        
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .scanlines::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 255, 0.05) 2px,
+                rgba(0, 255, 255, 0.05) 4px
+            );
+            pointer-events: none;
+        }
+        
+        .crt-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .crt-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+            animation: scanline 2s linear infinite;
+            pointer-events: none;
+        }
+        
+        .battery-cell {
+            background: linear-gradient(180deg, 
+                rgba(0, 255, 0, 0.1) 0%, 
+                rgba(255, 255, 0, 0.1) 50%, 
+                rgba(255, 0, 0, 0.1) 100%);
+        }
+        
+        .retro-button {
+            background: linear-gradient(145deg, #1a1a1a, #000);
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .retro-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px currentColor, inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .retro-button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-neon-cyan font-mono overflow-hidden">
+    <!-- Scanlines Overlay -->
+    <div class="fixed inset-0 scanlines pointer-events-none z-50 animate-flicker"></div>
+    
+    <!-- Grid Background -->
+    <div class="fixed inset-0 grid-bg opacity-20 pointer-events-none"></div>
+    
+    <!-- Main Container -->
+    <div class="min-h-screen p-4 crt-effect">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-4xl md:text-6xl font-bold text-neon-magenta text-glow animate-pulse-neon mb-2">
+                JOHNNY FIVE
+            </h1>
+            <h2 class="text-xl md:text-2xl text-neon-yellow text-glow">
+                LEFT TRACKDRIVE BATTERY MONITORING SYSTEM
+            </h2>
+            <div class="mt-4 text-neon-green text-sm">
+                <span class="animate-pulse">●</span> SYSTEM ONLINE <span class="animate-pulse">●</span>
+            </div>
+        </header>
+
+        <!-- @COMPONENT: MainDashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            
+            <!-- Battery Visualization Panel -->
+            <!-- @COMPONENT: BatteryPanel -->
+            <div class="lg:col-span-2 neon-border border-neon-cyan bg-dark-panel bg-opacity-80 p-6 animate-glow">
+                <h3 class="text-2xl font-bold text-neon-cyan mb-4 text-glow">BATTERY CELLS STATUS</h3>
+                
+                <!-- Battery Grid (8 cells) -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <!-- @MAP: batteries.map(battery => ( -->
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 01</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow" data-bind="battery.voltage">3.65V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full w-4/5 animate-pulse" style="width: 85%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">85%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 02</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow">3.62V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full animate-pulse" style="width: 82%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">82%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-orange p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 03</div>
+                        <div class="text-2xl font-bold text-neon-orange text-glow">3.45V</div>
+                        <div class="w-full bg-dark-bg border border-neon-orange mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-yellow to-neon-orange h-full animate-pulse" style="width: 65%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-orange mt-1">65%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 04</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow">3.60V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full animate-pulse" style="width: 80%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">80%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 05</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow">3.63V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full animate-pulse" style="width: 83%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">83%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 06</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow">3.64V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full animate-pulse" style="width: 84%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">84%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-red p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 07</div>
+                        <div class="text-2xl font-bold text-neon-red text-glow animate-pulse">3.20V</div>
+                        <div class="w-full bg-dark-bg border border-neon-red mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-orange to-neon-red h-full animate-pulse" style="width: 35%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-red mt-1 animate-pulse">35%</div>
+                    </div>
+                    
+                    <div class="battery-cell neon-border border-neon-green p-4 text-center" data-mock="true">
+                        <div class="text-xs text-neon-yellow mb-2">CELL 08</div>
+                        <div class="text-2xl font-bold text-neon-green text-glow">3.61V</div>
+                        <div class="w-full bg-dark-bg border border-neon-green mt-2 h-4 relative overflow-hidden">
+                            <div class="bg-gradient-to-r from-neon-green to-neon-yellow h-full animate-pulse" style="width: 81%"></div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+                        </div>
+                        <div class="text-xs text-neon-green mt-1">81%</div>
+                    </div>
+                    <!-- @END_MAP -->
+                </div>
+                
+                <!-- Pack Summary -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="neon-border border-neon-cyan p-3">
+                        <div class="text-xs text-neon-yellow mb-1">PACK VOLTAGE</div>
+                        <div class="text-xl font-bold text-neon-cyan text-glow" data-bind="packVoltage">28.80V</div>
+                    </div>
+                    <div class="neon-border border-neon-magenta p-3">
+                        <div class="text-xs text-neon-yellow mb-1">CURRENT</div>
+                        <div class="text-xl font-bold text-neon-magenta text-glow" data-bind="current">15.2A</div>
+                    </div>
+                    <div class="neon-border border-neon-green p-3">
+                        <div class="text-xs text-neon-yellow mb-1">TOTAL SOC</div>
+                        <div class="text-xl font-bold text-neon-green text-glow" data-bind="soc">76%</div>
+                    </div>
+                    <div class="neon-border border-neon-orange p-3">
+                        <div class="text-xs text-neon-yellow mb-1">TEMPERATURE</div>
+                        <div class="text-xl font-bold text-neon-orange text-glow" data-bind="temperature">25°C</div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: BatteryPanel -->
+
+            <!-- Right Side Panels -->
+            <div class="space-y-6">
+                
+                <!-- System Status Panel -->
+                <!-- @COMPONENT: SystemStatus -->
+                <div class="neon-border border-neon-purple bg-dark-panel bg-opacity-80 p-4 animate-glow">
+                    <h3 class="text-xl font-bold text-neon-purple mb-4 text-glow">SYSTEM STATUS</h3>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-neon-yellow">BMS-1 CONNECTION:</span>
+                            <span class="text-neon-green animate-pulse" data-bind="bms1Status">ONLINE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neon-yellow">BMS-2 CONNECTION:</span>
+                            <span class="text-neon-green animate-pulse" data-bind="bms2Status">ONLINE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neon-yellow">WEBSOCKET:</span>
+                            <span class="text-neon-green animate-pulse" data-bind="wsStatus">CONNECTED</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neon-yellow">DATA LOGGING:</span>
+                            <span class="text-neon-cyan animate-pulse" data-bind="loggingStatus">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neon-yellow">UPTIME:</span>
+                            <span class="text-neon-cyan" data-bind="uptime">02:34:56</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert System -->
+                    <div class="mt-4 pt-4 border-t border-neon-purple">
+                        <div class="text-xs text-neon-yellow mb-2">ALERTS</div>
+                        <div class="text-neon-red text-xs animate-pulse" data-mock="true">
+                            ⚠ CELL 07 VOLTAGE LOW
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: SystemStatus -->
+                
+                <!-- Controls Panel -->
+                <!-- @COMPONENT: ControlsPanel -->
+                <div class="neon-border border-neon-yellow bg-dark-panel bg-opacity-80 p-4 animate-glow">
+                    <h3 class="text-xl font-bold text-neon-yellow mb-4 text-glow">CONTROLS</h3>
+                    
+                    <div class="space-y-3">
+                        <button class="retro-button w-full p-3 text-neon-green border-neon-green font-bold text-glow" 
+                                data-event="click:startLogging" data-implementation="Should start data logging">
+                            START DATA LOG
+                        </button>
+                        
+                        <button class="retro-button w-full p-3 text-neon-magenta border-neon-magenta font-bold text-glow"
+                                data-event="click:exportData" data-implementation="Should export logged data">
+                            EXPORT DATA
+                        </button>
+                        
+                        <button class="retro-button w-full p-3 text-neon-orange border-neon-orange font-bold text-glow"
+                                data-event="click:resetAlerts" data-implementation="Should clear all alerts">
+                            RESET ALERTS
+                        </button>
+                        
+                        <button class="retro-button w-full p-3 text-neon-red border-neon-red font-bold text-glow"
+                                data-event="click:emergencyStop" data-implementation="Should trigger emergency shutdown">
+                            EMERGENCY STOP
+                        </button>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ControlsPanel -->
+                
+                <!-- Data History Chart -->
+                <!-- @COMPONENT: DataChart -->
+                <div class="neon-border border-neon-blue bg-dark-panel bg-opacity-80 p-4 animate-glow">
+                    <h3 class="text-xl font-bold text-neon-blue mb-4 text-glow">VOLTAGE HISTORY</h3>
+                    
+                    <!-- Retro Chart Visualization -->
+                    <div class="relative h-32 border border-neon-blue bg-dark-bg">
+                        <div class="absolute inset-0 grid grid-cols-10 grid-rows-5 opacity-30">
+                            <!-- Grid lines -->
+                            <div class="col-span-full row-span-full border-neon-blue" style="border-right: 1px solid; border-bottom: 1px solid;"></div>
+                        </div>
+                        
+                        <!-- Mock chart data -->
+                        <svg class="w-full h-full" viewBox="0 0 300 120" data-mock="true" data-implementation="Replace with real-time chart data">
+                            <polyline fill="none" stroke="#00FFFF" stroke-width="2" 
+                                     points="10,80 30,75 50,78 70,76 90,74 110,72 130,70 150,68 170,66 190,65 210,63 230,62 250,61 270,60 290,58"
+                                     class="animate-pulse"/>
+                            <polyline fill="none" stroke="#FF00FF" stroke-width="2" 
+                                     points="10,85 30,82 50,83 70,81 90,79 110,77 130,75 150,73 170,71 190,70 210,68 230,67 250,66 270,65 290,63"
+                                     class="animate-pulse"/>
+                        </svg>
+                        
+                        <!-- Chart Labels -->
+                        <div class="absolute bottom-1 left-1 text-xs text-neon-cyan">3.2V</div>
+                        <div class="absolute top-1 left-1 text-xs text-neon-cyan">3.7V</div>
+                        <div class="absolute bottom-1 right-1 text-xs text-neon-cyan">NOW</div>
+                    </div>
+                    
+                    <div class="mt-2 text-xs text-neon-yellow flex justify-between">
+                        <span>Min: 3.20V</span>
+                        <span>Max: 3.65V</span>
+                        <span>Avg: 3.56V</span>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: DataChart -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MainDashboard -->
+        
+        <!-- Footer Status Bar -->
+        <footer class="fixed bottom-0 left-0 right-0 neon-border border-neon-cyan bg-dark-panel bg-opacity-90 p-2">
+            <div class="flex justify-between items-center text-xs">
+                <div class="flex space-x-4">
+                    <span class="text-neon-green">
+                        <span class="animate-pulse">●</span> SYSTEM OPERATIONAL
+                    </span>
+                    <span class="text-neon-yellow" data-bind="lastUpdate">
+                        LAST UPDATE: 2024-01-15 14:32:45
+                    </span>
+                </div>
+                <div class="text-neon-cyan">
+                    JOHNNY FIVE v2.1.0 | © 2024 BATTERY MONITORING SYSTEMS
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time data updates
+        // TODO: Implement business logic for BMS communication
+        // TODO: Add data persistence and historical analysis
+        // TODO: Implement alert system with audio notifications
+        
+        (function() {
+            // Mock data simulation for demonstration
+            const mockData = {
+                batteries: [
+                    { id: 1, voltage: 3.65, soc: 85 },
+                    { id: 2, voltage: 3.62, soc: 82 },
+                    { id: 3, voltage: 3.45, soc: 65 },
+                    { id: 4, voltage: 3.60, soc: 80 },
+                    { id: 5, voltage: 3.63, soc: 83 },
+                    { id: 6, voltage: 3.64, soc: 84 },
+                    { id: 7, voltage: 3.20, soc: 35 },
+                    { id: 8, voltage: 3.61, soc: 81 }
+                ],
+                packVoltage: 28.80,
+                current: 15.2,
+                totalSoc: 76,
+                temperature: 25
+            };
+            
+            // Simulate real-time updates
+            function updateDisplay() {
+                // TODO: Replace with actual WebSocket data
+                console.log('Updating display with mock data:', mockData);
+            }
+            
+            // Update every 1 second
+            setInterval(updateDisplay, 1000);
+            
+            // Button event handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('[data-event]')) {
+                    const event = e.target.getAttribute('data-event');
+                    const implementation = e.target.getAttribute('data-implementation');
+                    console.log('Button clicked:', event, implementation);
+                    
+                    // Add visual feedback
+                    e.target.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        e.target.style.transform = '';
+                    }, 150);
+                }
+            });
+            
+            // Initialize touch event handlers for mobile
+            document.addEventListener('touchstart', function(e) {
+                if (e.target.matches('.retro-button')) {
+                    e.target.style.transform = 'scale(0.95)';
+                }
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                if (e.target.matches('.retro-button')) {
+                    setTimeout(() => {
+                        e.target.style.transform = '';
+                    }, 150);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

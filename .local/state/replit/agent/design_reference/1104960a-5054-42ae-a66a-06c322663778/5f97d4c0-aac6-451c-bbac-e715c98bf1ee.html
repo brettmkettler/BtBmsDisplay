@@ -1,0 +1,360 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'battery-red': '#FF0000',
+                        'battery-yellow': '#FFFF00', 
+                        'battery-green': '#00FF00',
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .battery-gradient {
+            background: linear-gradient(to right, #FF0000 0%, #FFFF00 50%, #00FF00 100%);
+        }
+        
+        .battery-fill-10 { width: 10%; }
+        .battery-fill-25 { width: 25%; }
+        .battery-fill-40 { width: 40%; }
+        .battery-fill-55 { width: 55%; }
+        .battery-fill-70 { width: 70%; }
+        .battery-fill-85 { width: 85%; }
+        .battery-fill-95 { width: 95%; }
+        .battery-fill-100 { width: 100%; }
+
+        .battery-container {
+            border: 3px solid #FF0000;
+            border-radius: 8px;
+            position: relative;
+            height: 40px;
+            width: 120px;
+            background-color: #000000;
+            overflow: hidden;
+        }
+        
+        .battery-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .battery-terminal {
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 20px;
+            background-color: #FF0000;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .data-value {
+            font-weight: 700;
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        .section-label {
+            font-weight: 600;
+            text-shadow: 0 0 8px currentColor;
+        }
+        
+        .battery-row {
+            border-bottom: 1px solid #333;
+            transition: background-color 0.2s ease;
+        }
+        
+        .battery-row:hover {
+            background-color: #111;
+        }
+        
+        @media (max-width: 768px) {
+            .battery-container {
+                width: 80px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen font-mono">
+    <!-- @COMPONENT: BatteryMonitoringDashboard -->
+    <div class="container mx-auto p-6 max-w-6xl">
+        
+        <!-- @COMPONENT: BatteryGrid -->
+        <div class="space-y-4">
+            
+            <!-- Battery 1 -->
+            <!-- @COMPONENT: BatteryRow [batteryNumber=1, voltage=3.65, amperage=2.3, chargeLevel=95] -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <!-- Battery Number -->
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-bind="battery.number">1</span>
+                </div>
+                
+                <!-- Battery Icon -->
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-95" data-bind="battery.fillLevel"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                
+                <!-- AMPS Section -->
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-bind="battery.amperage" data-mock="true">2.3</div>
+                </div>
+                
+                <!-- VOLTS Section -->
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-bind="battery.voltage" data-mock="true">3.65</div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: BatteryRow -->
+            
+            <!-- Battery 2 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">2</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-85" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">1.8</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.62</div>
+                </div>
+            </div>
+            
+            <!-- Battery 3 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">3</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-70" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">2.1</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.58</div>
+                </div>
+            </div>
+            
+            <!-- Battery 4 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">4</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-55" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">1.4</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.45</div>
+                </div>
+            </div>
+            
+            <!-- Battery 5 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">5</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-40" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">0.9</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.32</div>
+                </div>
+            </div>
+            
+            <!-- Battery 6 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">6</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-25" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">0.6</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.28</div>
+                </div>
+            </div>
+            
+            <!-- Battery 7 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">7</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-10" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">0.3</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.15</div>
+                </div>
+            </div>
+            
+            <!-- Battery 8 -->
+            <div class="battery-row flex items-center justify-between py-6 px-4">
+                <div class="w-16 text-center">
+                    <span class="text-6xl font-bold" style="color: #FF0000;" data-mock="true">8</span>
+                </div>
+                <div class="flex-shrink-0 mx-8">
+                    <div class="battery-container">
+                        <div class="battery-fill battery-gradient battery-fill-100" data-mock="true"></div>
+                        <div class="battery-terminal"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">AMPS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">2.7</div>
+                </div>
+                <div class="flex-1 text-center mx-8">
+                    <div class="section-label text-2xl mb-2" style="color: #FFFF00;">VOLTS</div>
+                    <div class="data-value text-4xl" style="color: #00FF00;" data-mock="true">3.65</div>
+                </div>
+            </div>
+            
+        </div>
+        <!-- @END_COMPONENT: BatteryGrid -->
+        
+        <!-- @COMPONENT: SystemStatus -->
+        <div class="mt-12 border-t border-gray-700 pt-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div class="space-y-2">
+                    <div class="section-label text-xl" style="color: #FFFF00;">TOTAL AMPS</div>
+                    <div class="data-value text-3xl" style="color: #00FF00;" data-bind="system.totalAmps" data-mock="true">12.1</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="section-label text-xl" style="color: #FFFF00;">AVG VOLTS</div>
+                    <div class="data-value text-3xl" style="color: #00FF00;" data-bind="system.avgVolts" data-mock="true">3.49</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="section-label text-xl" style="color: #FFFF00;">PACK SOC</div>
+                    <div class="data-value text-3xl" style="color: #00FF00;" data-bind="system.soc" data-mock="true">67%</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="section-label text-xl" style="color: #FFFF00;">STATUS</div>
+                    <div class="data-value text-3xl" style="color: #00FF00;" data-bind="system.status" data-mock="true">ACTIVE</div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: SystemStatus -->
+        
+    </div>
+    <!-- @END_COMPONENT: BatteryMonitoringDashboard -->
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time battery data updates
+        // TODO: Add BMS integration for dual battery management system
+        // TODO: Implement alert system for battery status warnings
+        // TODO: Add data logging and persistence functionality
+        
+        (function() {
+            // Simulated real-time data updates for demonstration
+            function updateBatteryData() {
+                // This would be replaced with actual WebSocket or API calls
+                const batteryRows = document.querySelectorAll('.battery-row');
+                
+                batteryRows.forEach((row, index) => {
+                    const fillElement = row.querySelector('.battery-fill');
+                    const ampsElement = row.querySelectorAll('.data-value')[0];
+                    const voltsElement = row.querySelectorAll('.data-value')[1];
+                    
+                    // Simulate minor fluctuations in real battery data
+                    if (Math.random() > 0.7) { // 30% chance of update per cycle
+                        const currentAmps = parseFloat(ampsElement.textContent);
+                        const currentVolts = parseFloat(voltsElement.textContent);
+                        
+                        const newAmps = Math.max(0, currentAmps + (Math.random() - 0.5) * 0.2);
+                        const newVolts = Math.max(3.0, Math.min(3.65, currentVolts + (Math.random() - 0.5) * 0.05));
+                        
+                        ampsElement.textContent = newAmps.toFixed(1);
+                        voltsElement.textContent = newVolts.toFixed(2);
+                        
+                        // Update battery fill level based on voltage
+                        const fillPercent = Math.round(((newVolts - 3.0) / (3.65 - 3.0)) * 100);
+                        fillElement.className = fillElement.className.replace(/battery-fill-\d+/, `battery-fill-${fillPercent}`);
+                    }
+                });
+            }
+            
+            // Update data every 5 seconds for demonstration
+            setInterval(updateBatteryData, 5000);
+            
+            // Touch interaction feedback
+            document.querySelectorAll('.battery-row').forEach(row => {
+                row.addEventListener('touchstart', function() {
+                    this.style.backgroundColor = '#222';
+                });
+                
+                row.addEventListener('touchend', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

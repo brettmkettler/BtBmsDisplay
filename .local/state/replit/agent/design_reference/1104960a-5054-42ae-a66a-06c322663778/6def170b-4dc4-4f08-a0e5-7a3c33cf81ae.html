@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'orbitron': ['Orbitron', 'monospace'],
+                    },
+                    colors: {
+                        'battery-red': '#FF0000',
+                        'battery-yellow': '#FFFF00',
+                        'battery-green': '#00FF00',
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .battery-gradient {
+            background: linear-gradient(to right, #FF0000 0%, #FF8000 25%, #FFFF00 50%, #80FF00 75%, #00FF00 100%);
+        }
+        .battery-shell {
+            background: #333;
+            border: 2px solid #666;
+        }
+        .glow-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+        .battery-segment {
+            transition: all 0.3s ease;
+        }
+        .retro-border {
+            border: 2px solid #444;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-orbitron min-h-screen overflow-hidden">
+    <!-- @COMPONENT: BatteryDashboard [Main container for battery monitoring interface] -->
+    <div class="max-w-screen-xl mx-auto p-4 h-screen flex flex-col">
+        
+        <!-- Battery Grid Section -->
+        <!-- @COMPONENT: BatteryGrid [8-cell battery display grid] -->
+        <div class="flex-1 grid grid-cols-2 gap-6 mb-8">
+            <!-- @MAP: batteries.map((battery, index) => ( -->
+            <!-- Battery Cell 1 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <!-- @COMPONENT: BatteryCellDisplay [Individual battery cell with voltage and visualization] -->
+                <div class="text-center">
+                    <!-- Battery Number -->
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text" data-bind="battery.number">1</div>
+                    
+                    <!-- Battery Visualization -->
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <!-- Battery Terminal -->
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            
+                            <!-- Battery Charge Level (85% example) -->
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" 
+                                 style="height: 85%;" data-bind="battery.chargeLevel">
+                            </div>
+                            
+                            <!-- Charge Segments -->
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Voltage Display -->
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text" data-bind="battery.voltage">3.45</div>
+                        <div class="text-battery-green text-sm" data-bind="battery.percentage">85%</div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: BatteryCellDisplay -->
+            </div>
+
+            <!-- Battery Cell 2 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text" data-bind="battery.number">2</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 92%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.52</div>
+                        <div class="text-battery-green text-sm">92%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 3 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">3</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 78%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.38</div>
+                        <div class="text-battery-green text-sm">78%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 4 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">4</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 88%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.48</div>
+                        <div class="text-battery-green text-sm">88%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 5 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">5</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 90%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.50</div>
+                        <div class="text-battery-green text-sm">90%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 6 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">6</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 82%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.42</div>
+                        <div class="text-battery-green text-sm">82%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 7 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">7</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 95%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.55</div>
+                        <div class="text-battery-green text-sm">95%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Cell 8 -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50">
+                <div class="text-center">
+                    <div class="text-battery-red text-4xl font-black mb-4 glow-text">8</div>
+                    <div class="relative mx-auto mb-4" style="width: 80px; height: 140px;">
+                        <div class="battery-shell rounded-lg w-full h-full relative overflow-hidden">
+                            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gray-600 rounded-t"></div>
+                            <div class="absolute bottom-0 left-0 w-full battery-gradient rounded-b-lg" style="height: 87%;"></div>
+                            <div class="absolute inset-0 flex flex-col justify-end">
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                                <div class="h-1 bg-black my-1 mx-2 battery-segment"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-battery-yellow text-lg font-bold">VOLTS</div>
+                        <div class="text-battery-green text-2xl font-black glow-text">3.47</div>
+                        <div class="text-battery-green text-sm">87%</div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_MAP )) -->
+        </div>
+        <!-- @END_COMPONENT: BatteryGrid -->
+
+        <!-- Status Panel -->
+        <!-- @COMPONENT: StatusPanel [System status and current monitoring] -->
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Current/Amperage Display -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50 text-center">
+                <div class="text-battery-yellow text-2xl font-bold mb-4 glow-text">AMPS</div>
+                <div class="text-battery-green text-5xl font-black glow-text" data-bind="system.current">12.4</div>
+                <div class="text-battery-green text-lg mt-2">DISCHARGE</div>
+            </div>
+
+            <!-- System Status Display -->
+            <div class="retro-border rounded-lg p-6 bg-gray-900 bg-opacity-50 text-center">
+                <div class="text-battery-yellow text-2xl font-bold mb-4 glow-text">STATUS</div>
+                <div class="text-battery-green text-3xl font-black glow-text" data-bind="system.status">ACTIVE</div>
+                <div class="text-battery-green text-lg mt-2">NORMAL</div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: StatusPanel -->
+
+        <!-- Connection Status Indicator -->
+        <!-- @COMPONENT: ConnectionIndicator [BMS connection status] -->
+        <div class="mt-4 text-center">
+            <div class="inline-flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-battery-green rounded-full glow-text" data-bind="bms1.connected"></div>
+                    <span class="text-battery-yellow text-sm">BMS1</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-battery-green rounded-full glow-text" data-bind="bms2.connected"></div>
+                    <span class="text-battery-yellow text-sm">BMS2</span>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ConnectionIndicator -->
+    </div>
+    <!-- @END_COMPONENT: BatteryDashboard -->
+
+    <script>
+        (function() {
+            // TODO: Implement WebSocket connection for real-time battery data
+            // TODO: Add BMS communication protocols
+            // TODO: Implement data persistence and logging
+            // TODO: Add alert system for low voltage/high current conditions
+            
+            // Mock data for demonstration
+            const mockBatteryData = {
+                batteries: [
+                    { number: 1, voltage: 3.45, percentage: 85, chargeLevel: 85 },
+                    { number: 2, voltage: 3.52, percentage: 92, chargeLevel: 92 },
+                    { number: 3, voltage: 3.38, percentage: 78, chargeLevel: 78 },
+                    { number: 4, voltage: 3.48, percentage: 88, chargeLevel: 88 },
+                    { number: 5, voltage: 3.50, percentage: 90, chargeLevel: 90 },
+                    { number: 6, voltage: 3.42, percentage: 82, chargeLevel: 82 },
+                    { number: 7, voltage: 3.55, percentage: 95, chargeLevel: 95 },
+                    { number: 8, voltage: 3.47, percentage: 87, chargeLevel: 87 }
+                ],
+                system: {
+                    current: 12.4,
+                    status: 'ACTIVE'
+                },
+                bms1: { connected: true },
+                bms2: { connected: true }
+            };
+
+            // Simulate real-time data updates
+            function updateDisplay() {
+                // TODO: Replace with actual WebSocket data
+                const batteries = document.querySelectorAll('[data-bind*="battery"]');
+                // Mock fluctuation in battery data
+                mockBatteryData.system.current = (12.0 + Math.random() * 2).toFixed(1);
+                
+                // Update current display
+                const currentDisplay = document.querySelector('[data-bind="system.current"]');
+                if (currentDisplay) {
+                    currentDisplay.textContent = mockBatteryData.system.current;
+                }
+            }
+
+            // Update every 2 seconds for demo
+            setInterval(updateDisplay, 2000);
+
+            // Touch event handling for mobile optimization
+            document.addEventListener('touchstart', function(e) {
+                // TODO: Implement touch gesture handling
+                // TODO: Add swipe gestures for additional views
+            });
+
+            // Handle orientation changes
+            window.addEventListener('orientationchange', function() {
+                // TODO: Optimize layout for orientation changes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+            });
+        })();
+    </script>
+</body>
+</html>

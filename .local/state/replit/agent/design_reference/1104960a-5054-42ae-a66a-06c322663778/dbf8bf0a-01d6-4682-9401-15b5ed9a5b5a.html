@@ -1,0 +1,430 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'mono': ['Monaco', 'Menlo', 'Ubuntu Mono', 'monospace'],
+                    },
+                    colors: {
+                        'battery-red': '#FF0000',
+                        'battery-yellow': '#FFFF00', 
+                        'battery-green': '#00FF00',
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: #000000;
+            color: #00FF00;
+            overflow: hidden;
+        }
+
+        .battery-container {
+            background: linear-gradient(to right, #FF0000 0%, #FF0000 var(--charge-level, 50%), #333333 var(--charge-level, 50%), #333333 100%);
+            border: 2px solid #666666;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .battery-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, #FF0000 0%, #FFFF00 25%, #00FF00 50%, #00FF00 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .battery-container.charging::before {
+            opacity: 1;
+            mask: linear-gradient(to right, transparent 0%, transparent var(--charge-level, 50%), black var(--charge-level, 50%), black 100%);
+        }
+
+        .battery-positive {
+            background: #666666;
+            border: 1px solid #888888;
+        }
+
+        .data-container {
+            transition: all 0.2s ease;
+        }
+
+        .data-container:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .battery-number {
+            text-shadow: 0 0 10px #FF0000;
+        }
+
+        .amps-label, .volts-label {
+            text-shadow: 0 0 8px #FFFF00;
+        }
+
+        .data-value {
+            text-shadow: 0 0 8px #00FF00;
+        }
+
+        .status-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Custom scrollbar for any overflow */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-black text-green-500 font-mono">
+    <!-- @COMPONENT: BatteryMonitorDashboard -->
+    <div class="w-full h-screen flex flex-col p-4 md:p-8" style="max-width: 1440px; height: 2560px; margin: 0 auto;">
+        
+        <!-- Status Header -->
+        <!-- @COMPONENT: StatusHeader -->
+        <div class="flex justify-between items-center mb-8 px-4">
+            <div class="flex items-center space-x-4">
+                <div class="status-indicator w-4 h-4 bg-battery-green rounded-full"></div>
+                <span class="text-battery-green text-lg font-bold" data-bind="connectionStatus">CONNECTED</span>
+            </div>
+            <div class="text-battery-yellow text-sm" data-bind="lastUpdate">
+                LAST UPDATE: <span data-mock="true">12:34:56</span>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: StatusHeader -->
+
+        <!-- Battery Grid Container -->
+        <!-- @COMPONENT: BatteryGrid -->
+        <div class="flex-1 space-y-6">
+            
+            <!-- @MAP: batteries.map((battery, index) => ( -->
+            <!-- Battery Row 1 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="1">
+                <!-- Battery Number -->
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">1</div>
+                </div>
+                
+                <!-- Battery Icon with Gradient -->
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <!-- Battery Body -->
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 85%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <!-- Battery Positive Terminal -->
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                
+                <!-- AMPS Section -->
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.45</div>
+                </div>
+                
+                <!-- VOLTS Section -->
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.42</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 2 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="2">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">2</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 92%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.38</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.48</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 3 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="3">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">3</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 78%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.52</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.39</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 4 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="4">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">4</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 88%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.41</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.45</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 5 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="5">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">5</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 95%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.47</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.51</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 6 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="6">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">6</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 82%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.44</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.43</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 7 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="7">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">7</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 90%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.49</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.47</div>
+                </div>
+            </div>
+
+            <!-- Battery Row 8 -->
+            <div class="data-container grid grid-cols-4 gap-6 items-center p-6 rounded-lg border border-gray-800" data-battery-id="8">
+                <div class="text-center">
+                    <div class="battery-number text-battery-red text-6xl font-bold" data-bind="battery.number">8</div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="relative flex items-center">
+                        <div class="battery-container w-32 h-16 rounded-sm" style="--charge-level: 87%;" data-bind="battery.chargeLevel">
+                            <div class="w-full h-full rounded-sm"></div>
+                        </div>
+                        <div class="battery-positive w-2 h-8 rounded-r-sm ml-1"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="amps-label text-battery-yellow text-2xl font-bold mb-2">AMPS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.current" data-mock="true">2.46</div>
+                </div>
+                <div class="text-center">
+                    <div class="volts-label text-battery-yellow text-2xl font-bold mb-2">VOLTS</div>
+                    <div class="data-value text-battery-green text-4xl font-bold" data-bind="battery.voltage" data-mock="true">3.46</div>
+                </div>
+            </div>
+            <!-- @END_MAP )) -->
+
+        </div>
+        <!-- @END_COMPONENT: BatteryGrid -->
+
+        <!-- System Summary Footer -->
+        <!-- @COMPONENT: SystemSummary -->
+        <div class="mt-8 grid grid-cols-3 gap-8 p-6 border-t border-gray-800">
+            <div class="text-center">
+                <div class="text-battery-yellow text-xl font-bold mb-2">TOTAL AMPS</div>
+                <div class="text-battery-green text-3xl font-bold" data-bind="totalAmps" data-mock="true">19.62</div>
+            </div>
+            <div class="text-center">
+                <div class="text-battery-yellow text-xl font-bold mb-2">AVG VOLTS</div>
+                <div class="text-battery-green text-3xl font-bold" data-bind="avgVolts" data-mock="true">3.44</div>
+            </div>
+            <div class="text-center">
+                <div class="text-battery-yellow text-xl font-bold mb-2">PACK SOC</div>
+                <div class="text-battery-green text-3xl font-bold" data-bind="packSoc" data-mock="true">87%</div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: SystemSummary -->
+
+    </div>
+    <!-- @END_COMPONENT: BatteryMonitorDashboard -->
+
+    <script>
+        // TODO: Implement WebSocket connection for real-time data updates
+        // TODO: Implement BMS integration via WebSocket or REST API
+        // TODO: Add data logging and persistence
+        // TODO: Implement alert system for low voltage/high current conditions
+        
+        (function() {
+            // Mock data update simulation
+            let mockData = {
+                batteries: [
+                    { number: 1, voltage: 3.42, current: 2.45, chargeLevel: 85 },
+                    { number: 2, voltage: 3.48, current: 2.38, chargeLevel: 92 },
+                    { number: 3, voltage: 3.39, current: 2.52, chargeLevel: 78 },
+                    { number: 4, voltage: 3.45, current: 2.41, chargeLevel: 88 },
+                    { number: 5, voltage: 3.51, current: 2.47, chargeLevel: 95 },
+                    { number: 6, voltage: 3.43, current: 2.44, chargeLevel: 82 },
+                    { number: 7, voltage: 3.47, current: 2.49, chargeLevel: 90 },
+                    { number: 8, voltage: 3.46, current: 2.46, chargeLevel: 87 }
+                ]
+            };
+
+            // Update battery charge levels dynamically
+            function updateBatteryVisuals() {
+                const batteryContainers = document.querySelectorAll('.battery-container');
+                batteryContainers.forEach((container, index) => {
+                    const chargeLevel = mockData.batteries[index].chargeLevel;
+                    container.style.setProperty('--charge-level', `${chargeLevel}%`);
+                    
+                    // Add charging animation for batteries above 90%
+                    if (chargeLevel > 90) {
+                        container.classList.add('charging');
+                    } else {
+                        container.classList.remove('charging');
+                    }
+                });
+            }
+
+            // Update timestamp
+            function updateTimestamp() {
+                const timestampElement = document.querySelector('[data-bind="lastUpdate"] span');
+                if (timestampElement) {
+                    const now = new Date();
+                    timestampElement.textContent = now.toLocaleTimeString();
+                }
+            }
+
+            // Initialize the display
+            updateBatteryVisuals();
+            updateTimestamp();
+
+            // Update timestamp every second
+            setInterval(updateTimestamp, 1000);
+
+            // Simulate data updates every 5 seconds
+            setInterval(() => {
+                // Simulate small voltage fluctuations
+                mockData.batteries.forEach(battery => {
+                    battery.voltage += (Math.random() - 0.5) * 0.02;
+                    battery.current += (Math.random() - 0.5) * 0.1;
+                    battery.voltage = Math.max(3.2, Math.min(3.65, battery.voltage));
+                    battery.current = Math.max(2.0, Math.min(3.0, battery.current));
+                    
+                    // Update charge level based on voltage
+                    battery.chargeLevel = Math.round(((battery.voltage - 3.2) / (3.65 - 3.2)) * 100);
+                });
+                
+                updateBatteryVisuals();
+            }, 5000);
+
+            // Touch interaction for battery rows
+            const batteryRows = document.querySelectorAll('.data-container');
+            batteryRows.forEach(row => {
+                row.addEventListener('touchstart', function() {
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                });
+                
+                row.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 200);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

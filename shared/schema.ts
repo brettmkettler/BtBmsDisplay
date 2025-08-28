@@ -28,6 +28,8 @@ export const batteryUpdateSchema = z.object({
     voltage: z.number().min(0).max(5),
     amperage: z.number().min(0).max(50),
     chargeLevel: z.number().min(0).max(100),
+    track: z.enum(["left", "right"]).optional(),
+    trackPosition: z.number().min(1).max(4).optional(),
   })),
 });
 
