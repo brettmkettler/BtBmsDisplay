@@ -1,0 +1,21 @@
+[Unit]
+Description=J5 Console Kiosk X11 Display
+After=multi-user.target j5-display-kiosk.service
+Wants=j5-display-kiosk.service
+
+[Service]
+Type=simple
+User=seanfuchs
+Group=seanfuchs
+WorkingDirectory=/home/seanfuchs/Desktop/j5_console/BtBmsDisplay
+Environment=DISPLAY=:0
+ExecStartPre=/bin/sleep 15
+ExecStart=/usr/bin/startx /home/seanfuchs/Desktop/j5_console/BtBmsDisplay/.xinitrc -- :0 vt1
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=j5-kiosk-x11
+
+[Install]
+WantedBy=graphical.target
