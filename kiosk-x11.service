@@ -1,7 +1,8 @@
 [Unit]
 Description=J5 Console Kiosk X11 Display
-After=multi-user.target j5-display-kiosk.service
+After=multi-user.target j5-display-kiosk.service j5-console.service overkill-bms-service.service
 Wants=j5-display-kiosk.service
+Requires=j5-display-kiosk.service
 
 [Service]
 Type=simple

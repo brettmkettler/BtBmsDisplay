@@ -1,8 +1,8 @@
 [Unit]
 Description=J5 Console Display Kiosk
-After=network.target j5-console.service
+After=network.target j5-console.service overkill-bms-service.service
 Wants=network.target
-Requires=j5-console.service
+Requires=j5-console.service overkill-bms-service.service
 
 [Service]
 Type=simple
