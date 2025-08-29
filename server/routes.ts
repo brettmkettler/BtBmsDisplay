@@ -17,6 +17,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update battery data (from Python BMS simulator)
+  app.post("/api/batteries/update", async (req, res) => {
+    try {
+      const batteryData = req.body;
+      
+      // Validate the incoming data
+      if (!Array.isArray(batteryData)) {
+        return res.status(400).json({ error: "Battery data must be an array" });
+      }
+
+      // Save to storage
+      await storage.saveBatteryData(batteryData);
+
+      // Broadcast to all connected WebSocket clients
+      const update: BatteryUpdate = {
+        type: "battery_update",
+        batteries: batteryData.map(b => ({
+          batteryNumber: b.batteryNumber,
+          voltage: b.voltage,
+          amperage: b.amperage,
+          chargeLevel: b.chargeLevel,
+        })),
+      };
+
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(update));
+        }
+      });
+
+      res.json({ success: true, message: "Battery data updated successfully" });
+    } catch (error) {
+      console.error("Error updating battery data:", error);
+      res.status(500).json({ error: "Failed to update battery data" });
+    }
+  });
+
   // Screen control APIs
   app.post("/api/screen/off", (req, res) => {
     try {
@@ -131,52 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Simulate BMS data updates every 2 seconds
-  setInterval(() => {
-    // Simulate realistic LiFePO4 data with small variations
-    // 4 batteries per track (left track: 1-4, right track: 5-8)
-    const mockBatteries = Array.from({ length: 8 }, (_, i) => {
-      const batteryNumber = i + 1;
-      const track = batteryNumber <= 4 ? 'left' : 'right';
-      const trackPosition = batteryNumber <= 4 ? batteryNumber : batteryNumber - 4;
-      
-      return {
-        batteryNumber,
-        track,
-        trackPosition,
-        voltage: 3.2 + Math.random() * 0.45, // 3.2V - 3.65V range
-        amperage: 10 + Math.random() * 5, // 10-15A range
-        chargeLevel: Math.max(0, Math.min(100, ((3.2 + Math.random() * 0.45 - 2.5) / (3.65 - 2.5)) * 100)),
-      };
-    });
-
-    // Save to storage
-    storage.saveBatteryData(mockBatteries.map(b => ({
-      batteryNumber: b.batteryNumber,
-      voltage: b.voltage,
-      amperage: b.amperage,
-      chargeLevel: b.chargeLevel,
-    })));
-
-    // Broadcast to all connected clients
-    const update: BatteryUpdate = {
-      type: "battery_update",
-      batteries: mockBatteries.map(b => ({
-        batteryNumber: b.batteryNumber,
-        voltage: b.voltage,
-        amperage: b.amperage,
-        chargeLevel: b.chargeLevel,
-        track: b.track,
-        trackPosition: b.trackPosition,
-      })),
-    };
-
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(update));
-      }
-    });
-  }, 2000);
+  // Note: Removed hardcoded mock data generation - now using Python simulator data
 
   return httpServer;
 }
