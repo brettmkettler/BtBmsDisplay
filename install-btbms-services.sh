@@ -55,14 +55,18 @@ echo "✅ Node.js version: $NODE_VERSION"
 # Create project directory if it doesn't exist
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "📁 Creating project directory..."
+    sudo mkdir -p "/home/seanfuchs/j5_console"
     sudo mkdir -p "$PROJECT_DIR"
-    sudo chown seanfuchs:seanfuchs "$PROJECT_DIR"
+    sudo chown -R seanfuchs:seanfuchs "/home/seanfuchs/j5_console"
 fi
 
 # Copy project files if not already there
 if [ "$SCRIPT_DIR" != "$PROJECT_DIR" ]; then
     echo "📋 Copying project files to $PROJECT_DIR..."
     sudo cp -r "$SCRIPT_DIR"/* "$PROJECT_DIR/"
+    sudo chown -R seanfuchs:seanfuchs "$PROJECT_DIR"
+else
+    echo "📋 Already in target directory, ensuring proper ownership..."
     sudo chown -R seanfuchs:seanfuchs "$PROJECT_DIR"
 fi
 
@@ -80,11 +84,9 @@ npm run build
 # Copy service files to systemd
 echo "⚙️ Installing systemd service files..."
 sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
-sudo cp "$PROJECT_DIR/btbms-kiosk.service" "$SERVICE_DIR/"
 
 # Set proper permissions
 sudo chmod 644 "$SERVICE_DIR/btbms-display.service"
-sudo chmod 644 "$SERVICE_DIR/btbms-kiosk.service"
 
 # Reload systemd
 echo "🔄 Reloading systemd..."
@@ -93,7 +95,6 @@ sudo systemctl daemon-reload
 # Enable services
 echo "✅ Enabling services..."
 sudo systemctl enable btbms-display.service
-sudo systemctl enable btbms-kiosk.service
 
 # Configure auto-login for seanfuchs user
 echo "🔐 Configuring auto-login..."
@@ -121,7 +122,7 @@ chmod +x /home/seanfuchs/.xsession
 mkdir -p /home/seanfuchs/.config/openbox
 cat > /home/seanfuchs/.config/openbox/autostart <<EOF
 # Start the kiosk service
-systemctl --user start btbms-kiosk.service &
+chromium-browser --kiosk --app=http://localhost:3000 &
 EOF
 
 # Start services
@@ -139,25 +140,14 @@ else
     echo "⚠️ Web service may not be ready yet. Check with: sudo systemctl status btbms-display.service"
 fi
 
-# Start kiosk service (only if X11 is available)
-if [ -n "$DISPLAY" ]; then
-    echo "🖥️ Starting kiosk mode..."
-    sudo systemctl start btbms-kiosk.service
-    echo "✅ Kiosk mode started"
-else
-    echo "ℹ️ Kiosk mode will start automatically after reboot when X11 is available"
-fi
-
 echo ""
 echo "🎉 Installation complete!"
 echo ""
 echo "📋 Service Status:"
 echo "  • BtBmsDisplay Web App: sudo systemctl status btbms-display.service"
-echo "  • Kiosk Mode: sudo systemctl status btbms-kiosk.service"
 echo ""
 echo "🔧 Manual Commands:"
 echo "  • Start web app: sudo systemctl start btbms-display.service"
-echo "  • Start kiosk: sudo systemctl start btbms-kiosk.service"
 echo "  • View logs: sudo journalctl -u btbms-display.service -f"
 echo "  • Test manually: npm start (from $PROJECT_DIR)"
 echo ""

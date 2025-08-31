@@ -11,7 +11,7 @@ Group=seanfuchs
 WorkingDirectory=/home/seanfuchs/j5_console/BtBmsDisplay
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStartPre=/usr/bin/npm install
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
