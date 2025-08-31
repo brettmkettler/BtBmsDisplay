@@ -5,7 +5,7 @@ This is a real-time battery monitoring system designed to display status informa
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
-
+#
 # System Architecture
 
 ## Frontend Architecture
