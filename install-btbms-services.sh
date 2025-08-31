@@ -39,7 +39,6 @@ sudo apt install -y \
     curl \
     xorg \
     openbox \
-    lightdm \
     unclutter
 
 # Install Node.js 18+ if needed
@@ -98,12 +97,7 @@ sudo systemctl enable btbms-kiosk.service
 
 # Configure auto-login for pi user
 echo "🔐 Configuring auto-login..."
-sudo mkdir -p /etc/lightdm/lightdm.conf.d
-sudo tee /etc/lightdm/lightdm.conf.d/01-autologin.conf > /dev/null <<EOF
-[Seat:*]
-autologin-user=pi
-autologin-user-timeout=0
-EOF
+sudo loginctl enable-linger pi
 
 # Configure X11 to start kiosk mode
 echo "🖥️ Configuring X11 startup..."
