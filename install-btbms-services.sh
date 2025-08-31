@@ -98,7 +98,47 @@ sudo systemctl enable btbms-display.service
 
 # Configure auto-login for seanfuchs user
 echo "🔐 Configuring auto-login..."
-sudo loginctl enable-linger seanfuchs
+# Configure getty for auto-login on tty1
+sudo systemctl edit getty@tty1 --full <<EOF
+[Unit]
+Description=Getty on %i
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+Documentation=http://0pointer.de/blog/projects/serial-console.html
+After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+After=rc-local.service
+Before=getty.target
+ConditionPathExists=/dev/tty0
+
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin seanfuchs --noclear %i \$TERM
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%i
+TTYPath=/dev/%i
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+KillMode=process
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+
+[Install]
+WantedBy=getty.target
+EOF
+
+# Add startx to .bashrc for auto-start on tty1
+echo "🖥️ Configuring auto-start X11..."
+if ! grep -q "startx" /home/seanfuchs/.bashrc; then
+    cat >> /home/seanfuchs/.bashrc <<EOF
+
+# Auto-start X11 and kiosk mode on login to tty1
+if [ "\$(tty)" = "/dev/tty1" ] && [ -z "\$DISPLAY" ]; then
+    startx
+fi
+EOF
+fi
 
 # Configure X11 to start kiosk mode
 echo "🖥️ Configuring X11 startup..."
