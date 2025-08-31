@@ -9,13 +9,13 @@ echo "🚀 Installing BtBmsDisplay Services..."
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo "❌ This script should not be run as root. Please run as the pi user."
+   echo "❌ This script should not be run as root. Please run as the seanfuchs user."
    exit 1
 fi
 
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="/home/pi/j5_console/BtBmsDisplay"
+PROJECT_DIR="/home/seanfuchs/j5_console/BtBmsDisplay"
 SERVICE_DIR="/etc/systemd/system"
 
 echo "📁 Script directory: $SCRIPT_DIR"
@@ -56,14 +56,14 @@ echo "✅ Node.js version: $NODE_VERSION"
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "📁 Creating project directory..."
     sudo mkdir -p "$PROJECT_DIR"
-    sudo chown pi:pi "$PROJECT_DIR"
+    sudo chown seanfuchs:seanfuchs "$PROJECT_DIR"
 fi
 
 # Copy project files if not already there
 if [ "$SCRIPT_DIR" != "$PROJECT_DIR" ]; then
     echo "📋 Copying project files to $PROJECT_DIR..."
     sudo cp -r "$SCRIPT_DIR"/* "$PROJECT_DIR/"
-    sudo chown -R pi:pi "$PROJECT_DIR"
+    sudo chown -R seanfuchs:seanfuchs "$PROJECT_DIR"
 fi
 
 # Navigate to project directory
@@ -95,13 +95,13 @@ echo "✅ Enabling services..."
 sudo systemctl enable btbms-display.service
 sudo systemctl enable btbms-kiosk.service
 
-# Configure auto-login for pi user
+# Configure auto-login for seanfuchs user
 echo "🔐 Configuring auto-login..."
-sudo loginctl enable-linger pi
+sudo loginctl enable-linger seanfuchs
 
 # Configure X11 to start kiosk mode
 echo "🖥️ Configuring X11 startup..."
-cat > /home/pi/.xsession <<EOF
+cat > /home/seanfuchs/.xsession <<EOF
 #!/bin/bash
 # Disable screen blanking
 xset s off
@@ -115,11 +115,11 @@ unclutter -idle 1 &
 exec openbox-session
 EOF
 
-chmod +x /home/pi/.xsession
+chmod +x /home/seanfuchs/.xsession
 
 # Create openbox autostart
-mkdir -p /home/pi/.config/openbox
-cat > /home/pi/.config/openbox/autostart <<EOF
+mkdir -p /home/seanfuchs/.config/openbox
+cat > /home/seanfuchs/.config/openbox/autostart <<EOF
 # Start the kiosk service
 systemctl --user start btbms-kiosk.service &
 EOF
