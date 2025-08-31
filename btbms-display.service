@@ -6,9 +6,9 @@ After=network-online.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/j5_console/BtBmsDisplay
+User=seanfuchs
+Group=seanfuchs
+WorkingDirectory=/home/seanfuchs/j5_console/BtBmsDisplay
 Environment=NODE_ENV=production
 Environment=PORT=3000
 ExecStartPre=/usr/bin/npm install
@@ -24,7 +24,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/home/pi/j5_console/BtBmsDisplay
+ReadWritePaths=/home/seanfuchs/j5_console/BtBmsDisplay
 
 [Install]
 WantedBy=multi-user.target

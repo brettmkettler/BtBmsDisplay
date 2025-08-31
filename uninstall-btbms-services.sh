@@ -9,13 +9,13 @@ echo "🗑️ Uninstalling BtBmsDisplay Services..."
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo "❌ This script should not be run as root. Please run as the pi user."
+   echo "❌ This script should not be run as root. Please run as the seanfuchs user."
    exit 1
 fi
 
 # Variables
 SERVICE_DIR="/etc/systemd/system"
-PROJECT_DIR="/home/pi/j5_console/BtBmsDisplay"
+PROJECT_DIR="/home/seanfuchs/j5_console/BtBmsDisplay"
 
 # Function to check if service exists
 service_exists() {
@@ -64,13 +64,13 @@ fi
 
 # Remove X11 configuration files
 echo "🖥️ Removing X11 configuration..."
-if [ -f "/home/pi/.xsession" ]; then
-    rm "/home/pi/.xsession"
+if [ -f "/home/seanfuchs/.xsession" ]; then
+    rm "/home/seanfuchs/.xsession"
     echo "  • Removed .xsession"
 fi
 
-if [ -d "/home/pi/.config/openbox" ]; then
-    rm -rf "/home/pi/.config/openbox"
+if [ -d "/home/seanfuchs/.config/openbox" ]; then
+    rm -rf "/home/seanfuchs/.config/openbox"
     echo "  • Removed openbox configuration"
 fi
 
