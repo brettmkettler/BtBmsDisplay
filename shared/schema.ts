@@ -9,6 +9,10 @@ export const batteryData = pgTable("battery_data", {
   voltage: real("voltage").notNull(),
   amperage: real("amperage").notNull(),
   chargeLevel: real("charge_level").notNull(),
+  temperature: real("temperature"),
+  status: varchar("status", { length: 20 }).default("normal"),
+  track: varchar("track", { length: 10 }),
+  trackPosition: integer("track_position"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -28,9 +32,15 @@ export const batteryUpdateSchema = z.object({
     voltage: z.number().min(0).max(5),
     amperage: z.number().min(0).max(50),
     chargeLevel: z.number().min(0).max(100),
+    temperature: z.number().optional(),
+    status: z.enum(["normal", "warning", "critical"]).optional(),
     track: z.enum(["left", "right"]).optional(),
     trackPosition: z.number().min(1).max(4).optional(),
   })),
+  connectionStatus: z.object({
+    left: z.boolean(),
+    right: z.boolean(),
+  }).optional(),
 });
 
 export type BatteryUpdate = z.infer<typeof batteryUpdateSchema>;

@@ -3,21 +3,54 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { batteryUpdateSchema, type BatteryUpdate } from "@shared/schema";
+import { bmsIntegration } from "./bms-integration";
 import * as os from "os";
 import { execSync } from "child_process";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get latest battery data
+  // Get latest battery data from BMS
   app.get("/api/batteries", async (req, res) => {
     try {
-      const batteries = await storage.getLatestBatteryData();
+      const batteries = await bmsIntegration.readBatteryData();
       res.json(batteries);
     } catch (error) {
+      console.error("Error fetching battery data:", error);
       res.status(500).json({ error: "Failed to fetch battery data" });
     }
   });
 
-  // Update battery data (from Python BMS simulator)
+  // Get BMS connection status
+  app.get("/api/bms/status", async (req, res) => {
+    try {
+      const connectionStatus = bmsIntegration.getConnectionStatus();
+      const deviceStatus = bmsIntegration.getDeviceStatus();
+      const isConnected = bmsIntegration.isConnectedToBMS();
+      
+      res.json({
+        connected: isConnected,
+        tracks: connectionStatus,
+        devices: deviceStatus,
+        config: bmsIntegration.getConfig()
+      });
+    } catch (error) {
+      console.error("Error fetching BMS status:", error);
+      res.status(500).json({ error: "Failed to fetch BMS status" });
+    }
+  });
+
+  // Toggle mock mode
+  app.post("/api/bms/mock/:enabled", async (req, res) => {
+    try {
+      const enabled = req.params.enabled === 'true';
+      bmsIntegration.setMockMode(enabled);
+      res.json({ success: true, mockMode: enabled });
+    } catch (error) {
+      console.error("Error toggling mock mode:", error);
+      res.status(500).json({ error: "Failed to toggle mock mode" });
+    }
+  });
+
+  // Update battery data (legacy endpoint for external systems)
   app.post("/api/batteries/update", async (req, res) => {
     try {
       const batteryData = req.body;
@@ -31,6 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.saveBatteryData(batteryData);
 
       // Broadcast to all connected WebSocket clients
+      const connectionStatus = bmsIntegration.getConnectionStatus();
       const update: BatteryUpdate = {
         type: "battery_update",
         batteries: batteryData.map(b => ({
@@ -38,7 +72,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           voltage: b.voltage,
           amperage: b.amperage,
           chargeLevel: b.chargeLevel,
+          temperature: b.temperature,
+          status: b.status,
+          track: b.track,
+          trackPosition: b.trackPosition,
         })),
+        connectionStatus
       };
 
       wss.clients.forEach((client) => {
@@ -112,6 +151,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         diskUsage = { total: 100, used: 50, available: 50 };
       }
 
+      // Get BMS connection status for system info
+      const bmsStatus = bmsIntegration.getConnectionStatus();
+
       const systemInfo = {
         unitId: "J5-CONSOLE-001",
         softwareVersion: "v2.1.4",
@@ -125,7 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hostname: os.hostname(),
         platform: os.platform(),
         arch: os.arch(),
-        uptime: Math.floor(os.uptime())
+        uptime: Math.floor(os.uptime()),
+        bmsConnected: bmsStatus.left || bmsStatus.right,
+        bmsStatus: bmsStatus
       };
 
       res.json(systemInfo);
@@ -142,22 +186,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
 
-    // Send initial battery data
-    storage.getLatestBatteryData().then(batteries => {
-      const update: BatteryUpdate = {
-        type: "battery_update",
-        batteries: batteries.map(b => ({
-          batteryNumber: b.batteryNumber,
-          voltage: b.voltage,
-          amperage: b.amperage,
-          chargeLevel: b.chargeLevel,
-        })),
-      };
-      
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(update));
+    // Send initial battery data and connection status
+    const sendInitialData = async () => {
+      try {
+        const batteries = await bmsIntegration.readBatteryData();
+        const connectionStatus = bmsIntegration.getConnectionStatus();
+        
+        const update: BatteryUpdate = {
+          type: "battery_update",
+          batteries: batteries.map(b => ({
+            batteryNumber: b.batteryNumber,
+            voltage: b.voltage,
+            amperage: b.amperage,
+            chargeLevel: b.chargeLevel,
+            temperature: b.temperature,
+            status: b.status,
+            track: b.track,
+            trackPosition: b.trackPosition,
+          })),
+          connectionStatus
+        };
+        
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(update));
+        }
+      } catch (error) {
+        console.error('Error sending initial WebSocket data:', error);
       }
-    });
+    };
+
+    sendInitialData();
 
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
@@ -168,7 +226,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Note: Removed hardcoded mock data generation - now using Python simulator data
+  // Real-time data broadcasting from BMS
+  const broadcastBatteryData = async () => {
+    try {
+      const batteries = await bmsIntegration.readBatteryData();
+      const connectionStatus = bmsIntegration.getConnectionStatus();
+      
+      const update: BatteryUpdate = {
+        type: "battery_update",
+        batteries: batteries.map(b => ({
+          batteryNumber: b.batteryNumber,
+          voltage: b.voltage,
+          amperage: b.amperage,
+          chargeLevel: b.chargeLevel,
+          temperature: b.temperature,
+          status: b.status,
+          track: b.track,
+          trackPosition: b.trackPosition,
+        })),
+        connectionStatus
+      };
+
+      // Save to storage
+      await storage.saveBatteryData(batteries);
+
+      // Broadcast to all connected clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(update));
+        }
+      });
+    } catch (error) {
+      // Silently handle errors to avoid spam
+      if (error instanceof Error && !error.message.includes('not connected')) {
+        console.error('Error broadcasting battery data:', error);
+      }
+    }
+  };
+
+  // Start real-time data broadcasting
+  setInterval(broadcastBatteryData, 2000);
 
   return httpServer;
 }
