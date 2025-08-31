@@ -97,31 +97,6 @@ echo "✅ Enabling services..."
 sudo systemctl enable btbms-display.service
 
 
-# Configure X11 to start kiosk mode
-echo "🖥️ Configuring X11 startup..."
-cat > /home/seanfuchs/.xinitrc <<EOF
-#!/bin/bash
-# Disable screen blanking
-xset s off
-xset -dpms
-xset s noblank
-
-# Hide mouse cursor after 1 second of inactivity
-unclutter -idle 1 &
-
-# Wait for web service to be ready
-until curl -s http://localhost:3000 > /dev/null; do
-    sleep 1
-done
-
-# Start openbox window manager in background
-openbox &
-
-# Start kiosk mode with the working command
-exec chromium-browser --kiosk --noerrdialogs --disable-infobars --touch-events --force-device-scale-factor=2.5 http://localhost:3000
-EOF
-
-chmod +x /home/seanfuchs/.xinitrc
 
 # Start services
 echo "🚀 Starting services..."
