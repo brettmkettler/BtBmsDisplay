@@ -41,6 +41,34 @@ sudo apt install -y \
     openbox \
     unclutter
 
+# Install Bluetooth dependencies for BMS integration
+echo "🔵 Installing Bluetooth BMS dependencies..."
+sudo apt install -y \
+    bluetooth \
+    bluez \
+    libbluetooth-dev \
+    libudev-dev \
+    build-essential \
+    python3-dev
+
+# Configure Bluetooth service
+echo "🔵 Configuring Bluetooth service..."
+sudo systemctl enable bluetooth
+sudo systemctl start bluetooth
+
+# Add user to bluetooth group
+echo "👤 Adding user to bluetooth group..."
+sudo usermod -a -G bluetooth $USER
+
+# Create udev rule for BLE access
+echo "⚙️ Creating udev rule for BLE access..."
+echo 'KERNEL=="hci0", GROUP="bluetooth", MODE="0664"' | sudo tee /etc/udev/rules.d/99-bluetooth.rules
+
+# Reload udev rules
+echo "🔄 Reloading udev rules..."
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
 # Install Node.js 18+ if needed
 if ! command_exists node; then
     echo "📦 Installing Node.js..."
@@ -81,12 +109,36 @@ npm install
 echo "🔨 Building the project..."
 npm run build
 
+# Create Bluetooth BMS service
+echo "⚙️ Creating Bluetooth BMS service..."
+sudo tee /etc/systemd/system/btbms-bluetooth.service << 'EOF'
+[Unit]
+Description=Bluetooth BMS Service
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'sleep 5 && hciconfig hci0 up'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Copy service files to systemd
 echo "⚙️ Installing systemd service files..."
 sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
 
 # Set proper permissions
 sudo chmod 644 "$SERVICE_DIR/btbms-display.service"
+sudo chmod 644 "$SERVICE_DIR/btbms-bluetooth.service"
+
+# Apply performance optimizations for Bluetooth
+echo "⚡ Applying Bluetooth performance optimizations..."
+echo 'net.core.rmem_default = 262144' | sudo tee -a /etc/sysctl.conf
+echo 'net.core.rmem_max = 16777216' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
 
 # Reload systemd
 echo "🔄 Reloading systemd..."
@@ -94,12 +146,12 @@ sudo systemctl daemon-reload
 
 # Enable services
 echo "✅ Enabling services..."
+sudo systemctl enable btbms-bluetooth.service
 sudo systemctl enable btbms-display.service
-
-
 
 # Start services
 echo "🚀 Starting services..."
+sudo systemctl start btbms-bluetooth.service
 sudo systemctl start btbms-display.service
 
 # Wait for web service to be ready
@@ -113,16 +165,38 @@ else
     echo "⚠️ Web service may not be ready yet. Check with: sudo systemctl status btbms-display.service"
 fi
 
+# Check Bluetooth status
+echo "🔍 Checking Bluetooth status..."
+if systemctl is-active --quiet bluetooth; then
+    echo "✅ Bluetooth service is running"
+    if hciconfig hci0 > /dev/null 2>&1; then
+        echo "✅ Bluetooth adapter (hci0) is available"
+    else
+        echo "⚠️  Bluetooth adapter not found - may require reboot"
+    fi
+else
+    echo "❌ Bluetooth service is not running"
+fi
+
 echo ""
 echo "🎉 Installation complete!"
 echo ""
 echo "📋 Service Status:"
 echo "  • BtBmsDisplay Web App: sudo systemctl status btbms-display.service"
+echo "  • Bluetooth BMS Service: sudo systemctl status btbms-bluetooth.service"
 echo ""
 echo "🔧 Manual Commands:"
 echo "  • Start web app: sudo systemctl start btbms-display.service"
 echo "  • View logs: sudo journalctl -u btbms-display.service -f"
 echo "  • Test manually: npm start (from $PROJECT_DIR)"
+echo "  • Check BMS status: curl http://localhost:3000/api/bms/status"
+echo "  • Toggle mock mode: curl -X POST http://localhost:3000/api/bms/mock/true"
+echo ""
+echo "🔵 Bluetooth BMS Integration:"
+echo "  • Real BMS data is enabled by default"
+echo "  • BMS MAC addresses: A4:C1:38:7C:2D:F0 (left), E0:9F:2A:E4:94:1D (right)"
+echo "  • Check Bluetooth: sudo systemctl status bluetooth"
+echo "  • Scan for devices: sudo hcitool lescan"
 echo ""
 echo "🔄 Reboot recommended to ensure all services start properly:"
 echo "  sudo reboot"

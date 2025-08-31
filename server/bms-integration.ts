@@ -38,7 +38,7 @@ export class BMSIntegration {
   private config: BMSConfig;
   private devices: Map<string, BMSDevice> = new Map();
   private isScanning: boolean = false;
-  private mockMode: boolean = false;
+  private mockMode: boolean = false; // Changed to false - start with real BMS data
   private pollTimer?: NodeJS.Timeout;
   private scanTimer?: NodeJS.Timeout;
   private isInitialized: boolean = false;
