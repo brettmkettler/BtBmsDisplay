@@ -8,7 +8,7 @@ After=network-online.target
 Type=simple
 User=seanfuchs
 Group=seanfuchs
-WorkingDirectory=/opt/btbms-display
+WorkingDirectory=/home/seanfuchs/Desktop/j5_console/BtBmsDisplay
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
@@ -18,13 +18,6 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=btbms-display
-
-# Security settings
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/opt/btbms-display
 
 [Install]
 WantedBy=multi-user.target
