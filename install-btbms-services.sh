@@ -102,7 +102,7 @@ sudo loginctl enable-linger seanfuchs
 
 # Configure X11 to start kiosk mode
 echo "🖥️ Configuring X11 startup..."
-cat > /home/seanfuchs/.xsession <<EOF
+cat > /home/seanfuchs/.xinitrc <<EOF
 #!/bin/bash
 # Disable screen blanking
 xset s off
@@ -112,18 +112,19 @@ xset s noblank
 # Hide mouse cursor after 1 second of inactivity
 unclutter -idle 1 &
 
-# Start openbox window manager
-exec openbox-session
+# Wait for web service to be ready
+until curl -s http://localhost:3000 > /dev/null; do
+    sleep 1
+done
+
+# Start openbox window manager in background
+openbox &
+
+# Start kiosk mode with the working command
+exec chromium-browser --kiosk --noerrdialogs --disable-infobars --touch-events --force-device-scale-factor=2.5 http://localhost:3000
 EOF
 
-chmod +x /home/seanfuchs/.xsession
-
-# Create openbox autostart
-mkdir -p /home/seanfuchs/.config/openbox
-cat > /home/seanfuchs/.config/openbox/autostart <<EOF
-# Start the kiosk service
-chromium-browser --kiosk --app=http://localhost:3000 &
-EOF
+chmod +x /home/seanfuchs/.xinitrc
 
 # Start services
 echo "🚀 Starting services..."
