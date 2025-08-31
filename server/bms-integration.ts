@@ -1,6 +1,6 @@
 // BMS Integration Module for Overkill Solar BMS via Bluetooth BLE
 // Optimized for Raspberry Pi 5
-import noble from '@noble/noble';
+import noble from '@abandonware/noble';
 import { Buffer } from 'buffer';
 
 export interface BatteryData {
