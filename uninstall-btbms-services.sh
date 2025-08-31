@@ -15,7 +15,7 @@ fi
 
 # Variables
 SERVICE_DIR="/etc/systemd/system"
-PROJECT_DIR="/home/seanfuchs/j5_console/BtBmsDisplay"
+PROJECT_DIR="/home/seanfuchs/Desktop/j5_console/BtBmsDisplay"
 
 # Function to check if service exists
 service_exists() {

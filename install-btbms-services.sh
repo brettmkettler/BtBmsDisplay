@@ -15,7 +15,7 @@ fi
 
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="/home/seanfuchs/j5_console/BtBmsDisplay"
+PROJECT_DIR="/home/seanfuchs/Desktop/j5_console/BtBmsDisplay"
 SERVICE_DIR="/etc/systemd/system"
 
 echo "📁 Script directory: $SCRIPT_DIR"
@@ -55,9 +55,9 @@ echo "✅ Node.js version: $NODE_VERSION"
 # Create project directory if it doesn't exist
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "📁 Creating project directory..."
-    sudo mkdir -p "/home/seanfuchs/j5_console"
+    sudo mkdir -p "/home/seanfuchs/Desktop/j5_console"
     sudo mkdir -p "$PROJECT_DIR"
-    sudo chown -R seanfuchs:seanfuchs "/home/seanfuchs/j5_console"
+    sudo chown -R seanfuchs:seanfuchs "/home/seanfuchs/Desktop/j5_console"
 fi
 
 # Copy project files if not already there
