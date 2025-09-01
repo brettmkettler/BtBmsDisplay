@@ -38,7 +38,6 @@ export class BMSIntegration {
   private config: BMSConfig;
   private devices: Map<string, BMSDevice> = new Map();
   private isScanning: boolean = false;
-  private mockMode: boolean = false; // Changed to false - start with real BMS data
   private pollTimer?: NodeJS.Timeout;
   private scanTimer?: NodeJS.Timeout;
   private isInitialized: boolean = false;
@@ -134,7 +133,7 @@ export class BMSIntegration {
   }
 
   private async startScanning(): Promise<void> {
-    if (this.isScanning || this.mockMode || !this.isInitialized) return;
+    if (this.isScanning || !this.isInitialized) return;
 
     try {
       console.log('Starting BLE scan for BMS devices...');
@@ -263,11 +262,6 @@ export class BMSIntegration {
   }
 
   async connect(): Promise<boolean> {
-    if (this.mockMode) {
-      console.log('BMS Integration: Running in mock mode');
-      return true;
-    }
-
     try {
       console.log('Initializing Bluetooth BLE for Raspberry Pi 5...');
       
@@ -328,10 +322,6 @@ export class BMSIntegration {
   }
 
   async readBatteryData(): Promise<BatteryData[]> {
-    if (this.mockMode) {
-      return this.generateMockData();
-    }
-
     const allBatteries: BatteryData[] = [];
 
     for (const device of this.devices.values()) {
@@ -342,15 +332,12 @@ export class BMSIntegration {
           console.log(`Successfully read data from ${device.track} track BMS`);
         } catch (error) {
           console.error(`Error reading data from ${device.track} track BMS:`, error);
-          // Don't add mock data - let UI show connection issues instead
         }
       } else {
         console.warn(`${device.track} track BMS not connected - MAC: ${device.mac}`);
-        // Don't add mock data - let UI show connection issues instead
       }
     }
 
-    // If no real data available, return empty array instead of mock data
     if (allBatteries.length === 0) {
       console.warn('No real BMS data available - check BMS connections');
     }
@@ -451,47 +438,7 @@ export class BMSIntegration {
     }
   }
 
-  private generateMockData(): BatteryData[] {
-    const batteries: BatteryData[] = [];
-    
-    // Generate data for both tracks
-    batteries.push(...this.generateMockDataForTrack('left'));
-    batteries.push(...this.generateMockDataForTrack('right'));
-    
-    return batteries;
-  }
-
-  private generateMockDataForTrack(track: 'left' | 'right'): BatteryData[] {
-    const batteries: BatteryData[] = [];
-    const startBatteryNumber = track === 'left' ? 1 : 5;
-    
-    for (let i = 0; i < (this.config.batteryCount || 4); i++) {
-      const baseVoltage = 3.2;
-      const voltage = baseVoltage + (Math.random() * 0.45);
-      const chargeLevel = this.calculateChargeLevel(voltage);
-      
-      let status: 'normal' | 'warning' | 'critical' = 'normal';
-      if (voltage < 3.0) status = 'critical';
-      else if (voltage < 3.1) status = 'warning';
-      
-      batteries.push({
-        batteryNumber: startBatteryNumber + i,
-        voltage: Math.round(voltage * 100) / 100,
-        amperage: Math.round((10 + Math.random() * 5) * 100) / 100,
-        chargeLevel: Math.round(chargeLevel),
-        temperature: Math.round((20 + Math.random() * 15)),
-        status,
-        track,
-        trackPosition: i + 1
-      });
-    }
-    
-    return batteries;
-  }
-
   isConnectedToBMS(): boolean {
-    if (this.mockMode) return true;
-    
     return Array.from(this.devices.values()).some(device => device.connected);
   }
 
@@ -503,17 +450,6 @@ export class BMSIntegration {
       left: leftDevice?.connected || false,
       right: rightDevice?.connected || false
     };
-  }
-
-  setMockMode(enabled: boolean): void {
-    this.mockMode = enabled;
-    console.log(`BMS Integration: Mock mode ${enabled ? 'enabled' : 'disabled'}`);
-    
-    if (enabled) {
-      this.disconnect();
-    } else {
-      this.connect();
-    }
   }
 
   getConfig(): BMSConfig {

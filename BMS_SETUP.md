@@ -156,24 +156,11 @@ Access these endpoints to verify functionality:
 
 - **Battery Data:** `GET /api/batteries`
 - **BMS Status:** `GET /api/bms/status`
-- **Toggle Mock Mode:** `POST /api/bms/mock/true` or `POST /api/bms/mock/false`
 - **System Info:** `GET /api/system`
 
 ### 3. WebSocket Connection
 
 The application provides real-time updates via WebSocket at `/ws`. Connection status and battery data are automatically broadcast every 2 seconds.
-
-### 4. Mock Mode
-
-For testing without physical BMS units:
-
-```bash
-# Enable mock mode
-curl -X POST http://localhost:3000/api/bms/mock/true
-
-# Disable mock mode (connect to real BMS)
-curl -X POST http://localhost:3000/api/bms/mock/false
-```
 
 ## Troubleshooting
 
@@ -292,6 +279,5 @@ sudo iptables -A INPUT -p tcp --dport 3000 -j DROP
 For issues or questions:
 1. Check the application logs: `sudo journalctl -u btbms-display.service -f`
 2. Verify BMS connectivity with the `/api/bms/status` endpoint
-3. Test in mock mode first: `POST /api/bms/mock/true`
-4. Ensure Bluetooth permissions are correct
-5. Verify BMS units are powered and within range (typically 10-30 feet)
+3. Ensure Bluetooth permissions are correct
+4. Verify BMS units are powered and within range (typically 10-30 feet)

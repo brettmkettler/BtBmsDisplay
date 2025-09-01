@@ -38,18 +38,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Toggle mock mode
-  app.post("/api/bms/mock/:enabled", async (req, res) => {
-    try {
-      const enabled = req.params.enabled === 'true';
-      bmsIntegration.setMockMode(enabled);
-      res.json({ success: true, mockMode: enabled });
-    } catch (error) {
-      console.error("Error toggling mock mode:", error);
-      res.status(500).json({ error: "Failed to toggle mock mode" });
-    }
-  });
-
   // Update battery data (legacy endpoint for external systems)
   app.post("/api/batteries/update", async (req, res) => {
     try {
