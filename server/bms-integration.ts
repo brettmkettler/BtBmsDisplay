@@ -148,15 +148,20 @@ export class BMSIntegration {
     try {
       console.log('Starting BLE scan for BMS devices...');
       console.log(`Looking for devices: ${this.config.leftTrackMac}, ${this.config.rightTrackMac}`);
+      console.log(`Noble state: ${noble.state}`);
       
       // Stop any existing scan
       if (noble.state === 'poweredOn') {
+        console.log('Stopping any existing scan...');
         await noble.stopScanningAsync();
+        console.log('Previous scan stopped');
       }
 
       // Start scanning with allowDuplicates for better discovery
+      console.log('Starting new BLE scan...');
       await noble.startScanningAsync([], true); // true = allowDuplicates
       this.isScanning = true;
+      console.log('BLE scan command sent, waiting for discoveries...');
 
       // Auto-stop scan after timeout to save power
       if (this.scanTimer) clearTimeout(this.scanTimer);
@@ -173,7 +178,14 @@ export class BMSIntegration {
 
     } catch (error) {
       console.error('Error starting BLE scan:', error);
+      console.error('Error details:', error.message);
       this.isScanning = false;
+      
+      // Try to restart scan after error
+      setTimeout(() => {
+        console.log('Retrying scan after error...');
+        this.startScanning();
+      }, 5000);
     }
   }
 
@@ -274,21 +286,41 @@ export class BMSIntegration {
     }
   }
 
-  async connect(): Promise<boolean> {
+  async initialize(): Promise<void> {
     try {
       console.log('Initializing Bluetooth BLE for Raspberry Pi 5...');
-      
       await this.initializeNoble();
+      
+      // Test BLE adapter functionality
+      await this.testBLEAdapter();
+      
       await this.startScanning();
-      
-      // Start polling for data
       this.startDataPolling();
-      
-      console.log('BMS Bluetooth integration initialized');
-      return true;
+      console.log('BMS Integration initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize BMS Bluetooth connection:', error);
-      return false;
+      console.error('Failed to initialize BMS integration:', error);
+      throw error;
+    }
+  }
+
+  private async testBLEAdapter(): Promise<void> {
+    console.log('Testing BLE adapter functionality...');
+    
+    try {
+      // Test if we can start/stop scanning
+      console.log('Testing scan start/stop...');
+      await noble.startScanningAsync([], false);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await noble.stopScanningAsync();
+      console.log('✓ BLE adapter scan test passed');
+      
+      // Check adapter info
+      console.log(`BLE adapter address: ${noble.address || 'unknown'}`);
+      console.log(`BLE adapter state: ${noble.state}`);
+      
+    } catch (error) {
+      console.error('✗ BLE adapter test failed:', error);
+      throw new Error(`BLE adapter not working: ${error.message}`);
     }
   }
 
@@ -485,6 +517,16 @@ export class BMSIntegration {
       };
     }
     return status;
+  }
+
+  async connect(): Promise<boolean> {
+    try {
+      await this.initialize();
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize BMS integration:', error);
+      return false;
+    }
   }
 }
 
