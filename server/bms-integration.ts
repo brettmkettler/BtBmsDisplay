@@ -339,15 +339,20 @@ export class BMSIntegration {
         try {
           const batteries = await this.readDeviceData(device);
           allBatteries.push(...batteries);
+          console.log(`Successfully read data from ${device.track} track BMS`);
         } catch (error) {
           console.error(`Error reading data from ${device.track} track BMS:`, error);
-          // Add mock data for this track if real data fails
-          allBatteries.push(...this.generateMockDataForTrack(device.track));
+          // Don't add mock data - let UI show connection issues instead
         }
       } else {
-        // Add mock data for disconnected devices
-        allBatteries.push(...this.generateMockDataForTrack(device.track));
+        console.warn(`${device.track} track BMS not connected - MAC: ${device.mac}`);
+        // Don't add mock data - let UI show connection issues instead
       }
+    }
+
+    // If no real data available, return empty array instead of mock data
+    if (allBatteries.length === 0) {
+      console.warn('No real BMS data available - check BMS connections');
     }
 
     return allBatteries;
