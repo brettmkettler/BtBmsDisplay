@@ -1,16 +1,24 @@
-import { useState } from 'react';
-import { BatteryListItem } from "@/components/battery-list-item";
-import { J5ControlPanel } from "@/components/j5-control-panel";
+import { useState } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { BatteryListItem } from "@/components/battery-list-item";
+import { LoadingScreen } from "@/components/loading-screen";
+import { ConnectionStatus } from "@/components/connection-status";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Bluetooth } from "lucide-react";
+import { J5ControlPanel } from "@/components/j5-control-panel";
 import { Button } from "@/components/ui/button";
 import { Settings, Battery, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Track = 'left' | 'right';
 
 export default function BatteryMonitor() {
-  const { isConnected, batteryData } = useWebSocket();
+  const { isConnected, batteryData, connectionStatus, lastUpdate } = useWebSocket();
   const [showControls, setShowControls] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track>('left');
+
+  // Show loading screen if not both BMS devices are connected
+  const bothConnected = connectionStatus.left && connectionStatus.right;
+  const showLoadingScreen = !bothConnected;
 
   // Filter batteries by current track
   const trackBatteries = batteryData.filter(battery => 
@@ -32,6 +40,15 @@ export default function BatteryMonitor() {
 
   return (
     <div className="w-full h-screen flex bg-display-black text-white font-mono-display">
+      {/* Loading Screen Overlay */}
+      {showLoadingScreen && (
+        <LoadingScreen
+          connectionStatus={connectionStatus}
+          isWebSocketConnected={isConnected}
+          lastUpdate={lastUpdate}
+        />
+      )}
+
       {/* Main Battery Display - Left side */}
       <div className="flex-1 flex flex-col">
         {/* Connection Status Indicator (minimal) */}
