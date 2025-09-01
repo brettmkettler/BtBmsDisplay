@@ -60,6 +60,21 @@ sudo usermod -a -G bluetooth $USER
 echo "⚙️ Creating udev rule for BLE access..."
 echo 'KERNEL=="hci0", GROUP="bluetooth", MODE="0664"' | sudo tee /etc/udev/rules.d/99-bluetooth.rules
 
+# Add additional udev rules for noble BLE access
+echo "⚙️ Creating additional BLE permission rules..."
+sudo tee /etc/udev/rules.d/99-noble.rules << 'EOF'
+# Allow users in bluetooth group to access BLE without root
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d6b", ATTRS{idProduct}=="0002", MODE="0664", GROUP="bluetooth"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d6b", ATTRS{idProduct}=="0003", MODE="0664", GROUP="bluetooth"
+KERNEL=="hci[0-9]*", GROUP="bluetooth", MODE="0664"
+ACTION=="add", KERNEL=="hci[0-9]*", RUN+="/bin/hciconfig %k up"
+EOF
+
+# Set capabilities for Node.js to access Bluetooth without root
+echo "🔐 Setting Node.js capabilities for Bluetooth access..."
+NODE_PATH=$(which node)
+sudo setcap 'cap_net_raw,cap_net_admin+eip' $NODE_PATH
+
 # Reload udev rules
 echo "🔄 Reloading udev rules..."
 sudo udevadm control --reload-rules
