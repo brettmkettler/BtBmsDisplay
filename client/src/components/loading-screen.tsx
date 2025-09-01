@@ -19,23 +19,23 @@ export function LoadingScreen({ connectionStatus, isWebSocketConnected, lastUpda
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-2xl w-full mx-4 space-y-6">
+    <div className="fixed inset-0 bg-display-black z-50 flex items-center justify-center">
+      <div className="bg-display-black border-2 border-battery-red rounded-xl p-8 max-w-2xl w-full mx-4 space-y-6">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
-            <Bluetooth className="w-8 h-8 text-blue-400" />
-            <h2 className="text-2xl font-bold text-white">Initializing BMS Connection</h2>
+            <Bluetooth className="w-8 h-8 text-battery-red" />
+            <h2 className="text-2xl font-bold text-battery-red">INITIALIZING BMS CONNECTION</h2>
           </div>
           
           {!isWebSocketConnected ? (
-            <p className="text-gray-400">Connecting to server...</p>
+            <p className="text-battery-yellow">Connecting to server...</p>
           ) : !anyConnected ? (
             <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-              <p className="text-gray-400">Scanning for BMS devices...</p>
+              <Loader2 className="w-5 h-5 animate-spin text-battery-red" />
+              <p className="text-battery-yellow">Scanning for BMS devices...</p>
             </div>
           ) : (
-            <p className="text-gray-400">Establishing connections...</p>
+            <p className="text-battery-yellow">Establishing connections...</p>
           )}
         </div>
 
@@ -55,7 +55,7 @@ export function LoadingScreen({ connectionStatus, isWebSocketConnected, lastUpda
         </div>
 
         <div className="text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-battery-yellow">
             This may take up to 30 seconds. Ensure BMS devices are powered on and within range.
           </p>
         </div>
