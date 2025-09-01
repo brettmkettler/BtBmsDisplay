@@ -6,7 +6,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Bluetooth } from "lucide-react";
 
-export function BatteryMonitor() {
+export default function BatteryMonitor() {
   const { isConnected, batteryData, connectionStatus, lastUpdate } = useWebSocket();
   const [selectedTrack, setSelectedTrack] = useState<'left' | 'right'>('left');
 
