@@ -115,11 +115,17 @@ export class BMSIntegration {
       const mac = peripheral.address?.toLowerCase();
       if (!mac) return;
 
+      // Log all discovered devices for debugging
+      console.log(`Discovered BLE device: ${mac} (${peripheral.advertisement?.localName || 'Unknown'}) RSSI: ${peripheral.rssi}dBm`);
+
       const device = this.devices.get(mac);
       
       if (device && !device.connected) {
         console.log(`Found BMS device: ${device.track} track (${mac}) RSSI: ${peripheral.rssi}dBm`);
         this.connectToDevice(peripheral, device);
+      } else if (!device) {
+        // Log devices that don't match our configured MACs
+        console.log(`Device ${mac} not in configured BMS list`);
       }
     });
 
@@ -130,6 +136,10 @@ export class BMSIntegration {
     noble.on('scanStop', () => {
       console.log('BLE scan stopped');
     });
+
+    noble.on('warning', (message) => {
+      console.log('Noble warning:', message);
+    });
   }
 
   private async startScanning(): Promise<void> {
@@ -137,23 +147,26 @@ export class BMSIntegration {
 
     try {
       console.log('Starting BLE scan for BMS devices...');
+      console.log(`Looking for devices: ${this.config.leftTrackMac}, ${this.config.rightTrackMac}`);
       
       // Stop any existing scan
       if (noble.state === 'poweredOn') {
         await noble.stopScanningAsync();
       }
 
-      // Start scanning with no service filter for better compatibility
-      await noble.startScanningAsync([], false);
+      // Start scanning with allowDuplicates for better discovery
+      await noble.startScanningAsync([], true); // true = allowDuplicates
       this.isScanning = true;
 
       // Auto-stop scan after timeout to save power
       if (this.scanTimer) clearTimeout(this.scanTimer);
       this.scanTimer = setTimeout(async () => {
+        console.log('Scan timeout reached, stopping scan...');
         await this.stopScanning();
         // Restart scan periodically if devices not connected
         const hasDisconnectedDevices = Array.from(this.devices.values()).some(d => !d.connected);
         if (hasDisconnectedDevices) {
+          console.log('Restarting scan in 5 seconds...');
           setTimeout(() => this.startScanning(), 5000);
         }
       }, this.config.scanTimeout!);
