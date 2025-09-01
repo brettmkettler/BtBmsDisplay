@@ -52,7 +52,7 @@ export class BMSIntegration {
       pollInterval: 2000,
       batteryCount: 4, // 4 batteries per track for dual-track system
       connectionTimeout: 15000, // Increased for RPi5
-      scanTimeout: 30000,
+      scanTimeout: 60000, // Increased to 60 seconds for better discovery
       maxReconnectAttempts: 5,
       ...config
     };
@@ -115,8 +115,14 @@ export class BMSIntegration {
       const mac = peripheral.address?.toLowerCase();
       if (!mac) return;
 
-      // Log all discovered devices for debugging
-      console.log(`Discovered BLE device: ${mac} (${peripheral.advertisement?.localName || 'Unknown'}) RSSI: ${peripheral.rssi}dBm`);
+      // Log all discovered devices for debugging with more details
+      const localName = peripheral.advertisement?.localName || 'Unknown';
+      const manufacturerData = peripheral.advertisement?.manufacturerData?.toString('hex') || 'None';
+      const serviceUuids = peripheral.advertisement?.serviceUuids || [];
+      
+      console.log(`Discovered BLE device: ${mac} (${localName}) RSSI: ${peripheral.rssi}dBm`);
+      console.log(`  Manufacturer Data: ${manufacturerData}`);
+      console.log(`  Service UUIDs: ${serviceUuids.join(', ') || 'None'}`);
 
       const device = this.devices.get(mac);
       
@@ -126,6 +132,14 @@ export class BMSIntegration {
       } else if (!device) {
         // Log devices that don't match our configured MACs
         console.log(`Device ${mac} not in configured BMS list`);
+        
+        // Check if this might be a BMS device by looking for BMS-like characteristics
+        if (localName.toLowerCase().includes('bms') || 
+            localName.toLowerCase().includes('battery') ||
+            serviceUuids.includes('ff00') ||
+            manufacturerData.length > 0) {
+          console.log(`⚠️  Device ${mac} might be a BMS device - check if this should be configured`);
+        }
       }
     });
 
@@ -163,16 +177,31 @@ export class BMSIntegration {
       this.isScanning = true;
       console.log('BLE scan command sent, waiting for discoveries...');
 
+      // Check for target devices every 5 seconds
+      const deviceCheckInterval = setInterval(() => {
+        const leftConnected = this.devices.get(this.config.leftTrackMac.toLowerCase())?.connected;
+        const rightConnected = this.devices.get(this.config.rightTrackMac.toLowerCase())?.connected;
+        
+        if (!leftConnected || !rightConnected) {
+          console.log(`Still scanning... Left: ${leftConnected ? 'Connected' : 'Searching'}, Right: ${rightConnected ? 'Connected' : 'Searching'}`);
+        }
+        
+        if (leftConnected && rightConnected) {
+          clearInterval(deviceCheckInterval);
+        }
+      }, 5000);
+
       // Auto-stop scan after timeout to save power
       if (this.scanTimer) clearTimeout(this.scanTimer);
       this.scanTimer = setTimeout(async () => {
+        clearInterval(deviceCheckInterval);
         console.log('Scan timeout reached, stopping scan...');
         await this.stopScanning();
         // Restart scan periodically if devices not connected
         const hasDisconnectedDevices = Array.from(this.devices.values()).some(d => !d.connected);
         if (hasDisconnectedDevices) {
-          console.log('Restarting scan in 5 seconds...');
-          setTimeout(() => this.startScanning(), 5000);
+          console.log('Restarting scan in 10 seconds...');
+          setTimeout(() => this.startScanning(), 10000);
         }
       }, this.config.scanTimeout!);
 
