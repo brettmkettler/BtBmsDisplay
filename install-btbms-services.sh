@@ -120,6 +120,12 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
+# Update service file with current user
+echo "⚙️ Updating service file with current user..."
+sed -i "s/User=seanfuchs/User=$USER/g" "$PROJECT_DIR/btbms-display.service"
+sed -i "s/Group=seanfuchs/Group=$USER/g" "$PROJECT_DIR/btbms-display.service"
+sed -i "s|WorkingDirectory=/home/seanfuchs/BtBmsDisplay|WorkingDirectory=$PROJECT_DIR|g" "$PROJECT_DIR/btbms-display.service"
+
 # Copy service files to systemd
 echo "⚙️ Installing systemd service files..."
 sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
@@ -128,10 +134,14 @@ sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
 sudo chmod 644 "$SERVICE_DIR/btbms-display.service"
 sudo chmod 644 "$SERVICE_DIR/btbms-bluetooth.service"
 
-# Apply performance optimizations for Bluetooth
+# Apply performance optimizations for Bluetooth (only if not already present)
 echo "⚡ Applying Bluetooth performance optimizations..."
-echo 'net.core.rmem_default = 262144' | sudo tee -a /etc/sysctl.conf
-echo 'net.core.rmem_max = 16777216' | sudo tee -a /etc/sysctl.conf
+if ! grep -q "net.core.rmem_default = 262144" /etc/sysctl.conf; then
+    echo 'net.core.rmem_default = 262144' | sudo tee -a /etc/sysctl.conf
+fi
+if ! grep -q "net.core.rmem_max = 16777216" /etc/sysctl.conf; then
+    echo 'net.core.rmem_max = 16777216' | sudo tee -a /etc/sysctl.conf
+fi
 sudo sysctl -p
 
 # Reload systemd
@@ -188,7 +198,6 @@ echo "  • Start web app: sudo systemctl start btbms-display.service"
 echo "  • View logs: sudo journalctl -u btbms-display.service -f"
 echo "  • Test manually: npm start (from $PROJECT_DIR)"
 echo "  • Check BMS status: curl http://localhost:3000/api/bms/status"
-echo "  • Toggle mock mode: curl -X POST http://localhost:3000/api/bms/mock/true"
 echo ""
 echo "🔵 Bluetooth BMS Integration:"
 echo "  • Real BMS data is enabled by default"

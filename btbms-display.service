@@ -6,9 +6,9 @@ After=network-online.target
 
 [Service]
 Type=simple
-User=%i
-Group=%i
-WorkingDirectory=%h/BtBmsDisplay
+User=seanfuchs
+Group=seanfuchs
+WorkingDirectory=/home/seanfuchs/BtBmsDisplay
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
