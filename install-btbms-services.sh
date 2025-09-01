@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # BtBmsDisplay Service Installation Script
-# This script installs and configures the BtBmsDisplay web application and kiosk mode
+# This script installs and configures the BtBmsDisplay web application
 
 set -e  # Exit on any error
 
@@ -9,13 +9,13 @@ echo "🚀 Installing BtBmsDisplay Services..."
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo "❌ This script should not be run as root. Please run as the seanfuchs user."
+   echo "❌ This script should not be run as root. Please run as a regular user."
    exit 1
 fi
 
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="/home/seanfuchs/Desktop/j5_console/BtBmsDisplay"
+PROJECT_DIR="$HOME/BtBmsDisplay"
 SERVICE_DIR="/etc/systemd/system"
 
 echo "📁 Script directory: $SCRIPT_DIR"
@@ -35,11 +35,7 @@ echo "📦 Installing required packages..."
 sudo apt install -y \
     nodejs \
     npm \
-    chromium-browser \
-    curl \
-    xorg \
-    openbox \
-    unclutter
+    curl
 
 # Install Bluetooth dependencies for BMS integration
 echo "🔵 Installing Bluetooth BMS dependencies..."
@@ -83,19 +79,17 @@ echo "✅ Node.js version: $NODE_VERSION"
 # Create project directory if it doesn't exist
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "📁 Creating project directory..."
-    sudo mkdir -p "/home/seanfuchs/Desktop/j5_console"
-    sudo mkdir -p "$PROJECT_DIR"
-    sudo chown -R seanfuchs:seanfuchs "/home/seanfuchs/Desktop/j5_console"
+    mkdir -p "$PROJECT_DIR"
 fi
 
 # Copy project files if not already there
 if [ "$SCRIPT_DIR" != "$PROJECT_DIR" ]; then
     echo "📋 Copying project files to $PROJECT_DIR..."
-    sudo cp -r "$SCRIPT_DIR"/* "$PROJECT_DIR/"
-    sudo chown -R seanfuchs:seanfuchs "$PROJECT_DIR"
+    cp -r "$SCRIPT_DIR"/* "$PROJECT_DIR/"
+    chown -R $USER:$USER "$PROJECT_DIR"
 else
     echo "📋 Already in target directory, ensuring proper ownership..."
-    sudo chown -R seanfuchs:seanfuchs "$PROJECT_DIR"
+    chown -R $USER:$USER "$PROJECT_DIR"
 fi
 
 # Navigate to project directory
@@ -184,6 +178,10 @@ echo ""
 echo "📋 Service Status:"
 echo "  • BtBmsDisplay Web App: sudo systemctl status btbms-display.service"
 echo "  • Bluetooth BMS Service: sudo systemctl status btbms-bluetooth.service"
+echo ""
+echo "🌐 Access the application:"
+echo "  • Open web browser to: http://localhost:3000"
+echo "  • Or from another device: http://$(hostname -I | awk '{print $1}'):3000"
 echo ""
 echo "🔧 Manual Commands:"
 echo "  • Start web app: sudo systemctl start btbms-display.service"
