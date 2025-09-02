@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Overkill Solar BMS Reader
-Connects to Overkill Solar BMS units via Bluetooth BLE and extracts battery data.
+Connects to Overkill Solar BMS units via Bluetooth BLE using bluepy and extracts battery data.
+Based on JBD BMS protocol implementation.
 Optimized for Raspberry Pi 5.
 """
 
@@ -9,11 +10,12 @@ import asyncio
 import struct
 import json
 import logging
+import binascii
+import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
-import bleak
-from bleak import BleakClient, BleakScanner
+from bluepy.btle import Peripheral, DefaultDelegate, BTLEException
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -40,189 +42,278 @@ class BMSStatus:
     last_update: Optional[str] = None
     error_message: Optional[str] = None
 
-class OverkillBMSReader:
-    """Overkill Solar BMS Bluetooth reader"""
+class BMSDelegate(DefaultDelegate):
+    """BLE notification delegate for BMS data"""
     
-    # Overkill Solar BMS Protocol Constants
-    BMS_SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb"
-    BMS_CHARACTERISTIC_UUID = "0000ff02-0000-1000-8000-00805f9b34fb"
-    BMS_READ_COMMAND = bytes([0xDD, 0xA5, 0x03, 0x00, 0xFF, 0xFD, 0x77])
+    def __init__(self, bms_reader, track):
+        DefaultDelegate.__init__(self)
+        self.bms_reader = bms_reader
+        self.track = track
+        self.cell_voltages = []
+        self.pack_info = {}
+        
+    def handleNotification(self, cHandle, data):
+        hex_data = binascii.hexlify(data)
+        text_string = hex_data.decode('utf-8')
+        
+        try:
+            if text_string.find('dd04') != -1:  # Cell voltages (1-8 cells)
+                self.process_cell_voltages(data)
+            elif text_string.find('dd03') != -1:  # Pack info
+                self.process_pack_info(data)
+            elif text_string.find('77') != -1 and (len(text_string) == 28 or len(text_string) == 36):
+                self.process_pack_status(data)
+        except Exception as e:
+            logger.error(f"Error processing BMS notification for {self.track}: {e}")
+    
+    def process_cell_voltages(self, data):
+        """Process cell voltage data"""
+        try:
+            i = 4  # Skip header bytes 0-3
+            cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8 = struct.unpack_from('>HHHHHHHH', data, i)
+            self.cell_voltages = [cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8]
+            
+            logger.debug(f"{self.track} track cell voltages: {self.cell_voltages}")
+            self.update_battery_data()
+            
+        except Exception as e:
+            logger.error(f"Error processing cell voltages for {self.track}: {e}")
+    
+    def process_pack_info(self, data):
+        """Process pack information data"""
+        try:
+            i = 4  # Skip header bytes 0-3
+            volts, amps, remain, capacity, cycles, mdate, balance1, balance2 = struct.unpack_from('>HhHHHHHH', data, i)
+            
+            self.pack_info = {
+                'volts': volts / 100.0,
+                'amps': amps / 100.0,
+                'capacity': capacity / 100.0,
+                'remain': remain / 100.0,
+                'cycles': cycles,
+                'watts': (volts / 100.0) * (amps / 100.0),
+                'charge_level': (remain / capacity * 100) if capacity > 0 else 0
+            }
+            
+            logger.debug(f"{self.track} track pack info: {self.pack_info}")
+            self.update_battery_data()
+            
+        except Exception as e:
+            logger.error(f"Error processing pack info for {self.track}: {e}")
+    
+    def process_pack_status(self, data):
+        """Process pack status data"""
+        try:
+            i = 0
+            protect, vers, percent, fet, cells, sensors, temp1, temp2, b77 = struct.unpack_from('>HBBBBBHHB', data, i)
+            
+            temp1_c = (temp1 - 2731) / 10.0 if temp1 > 0 else None
+            temp2_c = (temp2 - 2731) / 10.0 if temp2 > 0 else None
+            
+            self.pack_info.update({
+                'protect': protect,
+                'percent': percent,
+                'fet': fet,
+                'cells': cells,
+                'temp1': temp1_c,
+                'temp2': temp2_c
+            })
+            
+            logger.debug(f"{self.track} track status: protect={protect}, percent={percent}, temp1={temp1_c}°C")
+            self.update_battery_data()
+            
+        except Exception as e:
+            logger.error(f"Error processing pack status for {self.track}: {e}")
+    
+    def update_battery_data(self):
+        """Update battery data in the BMS reader"""
+        if not self.cell_voltages or not self.pack_info:
+            return
+        
+        try:
+            batteries = []
+            cell_count = min(len(self.cell_voltages), 4)  # Limit to 4 cells per track
+            
+            for i in range(cell_count):
+                if self.cell_voltages[i] > 0:  # Only include active cells
+                    battery_number = i + 1 + (4 if self.track == 'right' else 0)
+                    cell_voltage = self.cell_voltages[i] / 1000.0  # Convert mV to V
+                    
+                    # Determine status based on cell voltage
+                    if cell_voltage < 3.0:
+                        status = 'critical'
+                    elif cell_voltage < 3.2 or cell_voltage > 4.1:
+                        status = 'warning'
+                    else:
+                        status = 'normal'
+                    
+                    battery = BatteryData(
+                        batteryNumber=battery_number,
+                        voltage=cell_voltage,
+                        amperage=self.pack_info.get('amps', 0) / cell_count,
+                        chargeLevel=self.pack_info.get('charge_level', 0),
+                        temperature=self.pack_info.get('temp1'),
+                        status=status,
+                        track=self.track,
+                        trackPosition=i + 1
+                    )
+                    batteries.append(battery)
+            
+            # Update the reader's data
+            self.bms_reader.last_data[self.track] = batteries
+            self.bms_reader.connection_status[self.track].last_update = datetime.now().isoformat()
+            
+            logger.debug(f"Updated {len(batteries)} batteries for {self.track} track")
+            
+        except Exception as e:
+            logger.error(f"Error updating battery data for {self.track}: {e}")
+
+class OverkillBMSReader:
+    """Overkill Solar BMS Bluetooth reader using bluepy"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.left_mac = config.get('left_track_mac', 'A4:C1:38:7C:2D:F0')
         self.right_mac = config.get('right_track_mac', 'E0:9F:2A:E4:94:1D')
-        self.scan_timeout = config.get('scan_timeout', 30)
         self.connection_timeout = config.get('connection_timeout', 15)
+        self.poll_interval = config.get('poll_interval', 2)
         
-        self.clients: Dict[str, BleakClient] = {}
+        self.peripherals: Dict[str, Peripheral] = {}
+        self.delegates: Dict[str, BMSDelegate] = {}
         self.last_data: Dict[str, List[BatteryData]] = {'left': [], 'right': []}
         self.connection_status: Dict[str, BMSStatus] = {
             'left': BMSStatus(False, self.left_mac, 'left'),
             'right': BMSStatus(False, self.right_mac, 'right')
         }
+        self.running = False
     
-    async def scan_for_devices(self) -> Dict[str, str]:
-        """Scan for BMS devices and return found MAC addresses"""
-        logger.info("Scanning for BMS devices...")
-        found_devices = {}
-        
-        try:
-            devices = await BleakScanner.discover(timeout=self.scan_timeout)
-            
-            for device in devices:
-                mac = device.address.lower()
-                name = device.name or "Unknown"
-                
-                logger.debug(f"Found device: {mac} ({name}) RSSI: {device.rssi}dBm")
-                
-                if mac == self.left_mac.lower():
-                    found_devices['left'] = device.address
-                    logger.info(f"Found LEFT track BMS: {mac} RSSI: {device.rssi}dBm")
-                elif mac == self.right_mac.lower():
-                    found_devices['right'] = device.address
-                    logger.info(f"Found RIGHT track BMS: {mac} RSSI: {device.rssi}dBm")
-                    
-        except Exception as e:
-            logger.error(f"Error during BLE scan: {e}")
-        
-        logger.info(f"Scan complete. Found {len(found_devices)} BMS devices")
-        return found_devices
-    
-    async def connect_to_device(self, mac_address: str, track: str) -> Optional[BleakClient]:
+    def connect_to_device(self, mac_address: str, track: str) -> bool:
         """Connect to a specific BMS device"""
         try:
             logger.info(f"Connecting to {track} track BMS: {mac_address}")
             
-            client = BleakClient(mac_address, timeout=self.connection_timeout)
-            await client.connect()
+            # Try to connect
+            peripheral = Peripheral(mac_address, addrType="public")
             
-            if client.is_connected:
-                logger.info(f"✓ Connected to {track} track BMS")
-                self.clients[track] = client
-                self.connection_status[track].connected = True
-                self.connection_status[track].last_update = datetime.now().isoformat()
-                self.connection_status[track].error_message = None
-                return client
-            else:
-                raise Exception("Failed to establish connection")
-                
-        except Exception as e:
+            # Set up delegate for notifications
+            delegate = BMSDelegate(self, track)
+            peripheral.setDelegate(delegate)
+            
+            # Store connections
+            self.peripherals[track] = peripheral
+            self.delegates[track] = delegate
+            
+            # Update status
+            self.connection_status[track].connected = True
+            self.connection_status[track].last_update = datetime.now().isoformat()
+            self.connection_status[track].error_message = None
+            
+            logger.info(f"✓ Connected to {track} track BMS")
+            return True
+            
+        except BTLEException as e:
             logger.error(f"Failed to connect to {track} track BMS: {e}")
             self.connection_status[track].connected = False
             self.connection_status[track].error_message = str(e)
-            return None
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to {track} track BMS: {e}")
+            self.connection_status[track].connected = False
+            self.connection_status[track].error_message = str(e)
+            return False
     
-    def parse_bms_data(self, data: bytes, track: str) -> List[BatteryData]:
-        """Parse BMS response data into battery information"""
+    def disconnect_device(self, track: str):
+        """Disconnect from a BMS device"""
         try:
-            if len(data) < 34:
-                logger.warning(f"Insufficient data received from {track} track: {len(data)} bytes")
-                return []
-            
-            # Parse BMS data according to Overkill Solar protocol
-            # This is a simplified parser - adjust based on actual protocol
-            
-            batteries = []
-            
-            # Extract basic info (adjust offsets based on actual protocol)
-            pack_voltage = struct.unpack('>H', data[4:6])[0] / 100.0  # Pack voltage in V
-            pack_current = struct.unpack('>h', data[6:8])[0] / 100.0  # Pack current in A
-            remaining_capacity = struct.unpack('>H', data[8:10])[0] / 100.0  # Remaining capacity
-            nominal_capacity = struct.unpack('>H', data[10:12])[0] / 100.0  # Nominal capacity
-            
-            # Calculate charge level
-            charge_level = (remaining_capacity / nominal_capacity * 100) if nominal_capacity > 0 else 0
-            
-            # Temperature (if available)
-            temp1 = struct.unpack('>H', data[12:14])[0] / 10.0 - 273.15 if len(data) >= 14 else None
-            
-            # For now, create 4 batteries per track (adjust based on actual setup)
-            cell_voltages_start = 14
-            for i in range(4):
-                if cell_voltages_start + (i * 2) + 1 < len(data):
-                    cell_voltage = struct.unpack('>H', data[cell_voltages_start + (i * 2):cell_voltages_start + (i * 2) + 2])[0] / 1000.0
-                else:
-                    cell_voltage = pack_voltage / 4  # Fallback estimate
+            if track in self.peripherals:
+                self.peripherals[track].disconnect()
+                del self.peripherals[track]
+                del self.delegates[track]
                 
-                battery = BatteryData(
-                    batteryNumber=i + 1 + (4 if track == 'right' else 0),
-                    voltage=cell_voltage,
-                    amperage=pack_current / 4,  # Distribute current across cells
-                    chargeLevel=charge_level,
-                    temperature=temp1,
-                    status='normal' if 3.0 <= cell_voltage <= 4.2 else 'warning',
-                    track=track,
-                    trackPosition=i + 1
-                )
-                batteries.append(battery)
-            
-            logger.debug(f"Parsed {len(batteries)} batteries from {track} track")
-            return batteries
+            self.connection_status[track].connected = False
+            logger.info(f"Disconnected from {track} track BMS")
             
         except Exception as e:
-            logger.error(f"Error parsing BMS data from {track} track: {e}")
-            return []
+            logger.error(f"Error disconnecting from {track} track: {e}")
     
-    async def read_bms_data(self, track: str) -> List[BatteryData]:
+    def read_bms_data(self, track: str) -> bool:
         """Read data from a connected BMS device"""
-        client = self.clients.get(track)
-        if not client or not client.is_connected:
-            logger.warning(f"{track} track BMS not connected")
-            return []
+        if track not in self.peripherals:
+            return False
         
         try:
-            # Send read command to BMS
-            await client.write_gatt_char(self.BMS_CHARACTERISTIC_UUID, self.BMS_READ_COMMAND)
+            peripheral = self.peripherals[track]
             
-            # Wait a bit for response
-            await asyncio.sleep(0.1)
+            # Request pack info (0x03)
+            peripheral.writeCharacteristic(0x15, b'\xdd\xa5\x03\x00\xff\xfd\x77', False)
+            peripheral.waitForNotifications(2)
             
-            # Read response
-            response = await client.read_gatt_char(self.BMS_CHARACTERISTIC_UUID)
+            # Request cell voltages (0x04)  
+            peripheral.writeCharacteristic(0x15, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
+            peripheral.waitForNotifications(2)
             
-            # Parse the data
-            batteries = self.parse_bms_data(response, track)
+            return True
             
-            if batteries:
-                self.last_data[track] = batteries
-                self.connection_status[track].last_update = datetime.now().isoformat()
-                logger.debug(f"Successfully read data from {track} track BMS")
-            
-            return batteries
-            
+        except BTLEException as e:
+            logger.error(f"BLE error reading from {track} track: {e}")
+            self.connection_status[track].connected = False
+            self.connection_status[track].error_message = str(e)
+            return False
         except Exception as e:
             logger.error(f"Error reading from {track} track BMS: {e}")
             self.connection_status[track].error_message = str(e)
-            return []
+            return False
     
-    async def read_all_bms_data(self) -> Dict[str, List[BatteryData]]:
-        """Read data from all connected BMS devices"""
-        tasks = []
+    def connect_all_devices(self) -> Dict[str, bool]:
+        """Connect to all configured BMS devices"""
+        results = {}
         
-        for track in ['left', 'right']:
-            if self.clients.get(track) and self.clients[track].is_connected:
-                tasks.append(self.read_bms_data(track))
+        # Try to connect to left track
+        results['left'] = self.connect_to_device(self.left_mac, 'left')
         
-        if tasks:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            # Process results as needed
+        # Try to connect to right track
+        results['right'] = self.connect_to_device(self.right_mac, 'right')
         
-        return self.last_data
+        return results
     
-    async def disconnect_all(self):
+    def disconnect_all(self):
         """Disconnect from all BMS devices"""
-        for track, client in self.clients.items():
-            if client and client.is_connected:
-                try:
-                    await client.disconnect()
-                    logger.info(f"Disconnected from {track} track BMS")
-                except Exception as e:
-                    logger.error(f"Error disconnecting from {track} track: {e}")
-                finally:
-                    self.connection_status[track].connected = False
+        for track in ['left', 'right']:
+            self.disconnect_device(track)
+    
+    def start_reading(self):
+        """Start continuous BMS data reading"""
+        self.running = True
+        logger.info("Starting BMS data reading loop")
         
-        self.clients.clear()
+        while self.running:
+            try:
+                # Read from all connected devices
+                for track in ['left', 'right']:
+                    if self.connection_status[track].connected:
+                        success = self.read_bms_data(track)
+                        if not success:
+                            # Try to reconnect on failure
+                            logger.warning(f"Lost connection to {track} track, attempting reconnect...")
+                            mac = self.left_mac if track == 'left' else self.right_mac
+                            self.disconnect_device(track)
+                            time.sleep(1)
+                            self.connect_to_device(mac, track)
+                
+                time.sleep(self.poll_interval)
+                
+            except KeyboardInterrupt:
+                logger.info("Stopping BMS reader...")
+                break
+            except Exception as e:
+                logger.error(f"Error in reading loop: {e}")
+                time.sleep(5)
+        
+        self.disconnect_all()
+    
+    def stop_reading(self):
+        """Stop continuous BMS data reading"""
+        self.running = False
     
     def get_all_batteries(self) -> List[Dict[str, Any]]:
         """Get all battery data as JSON-serializable format"""
@@ -244,35 +335,25 @@ async def main():
     config = {
         'left_track_mac': 'A4:C1:38:7C:2D:F0',
         'right_track_mac': 'E0:9F:2A:E4:94:1D',
-        'scan_timeout': 30,
-        'connection_timeout': 15
+        'connection_timeout': 15,
+        'poll_interval': 2
     }
     
     reader = OverkillBMSReader(config)
     
     try:
-        # Scan for devices
-        found_devices = await reader.scan_for_devices()
+        # Connect to devices
+        results = reader.connect_all_devices()
+        logger.info(f"Connection results: {results}")
         
-        # Connect to found devices
-        for track, mac in found_devices.items():
-            await reader.connect_to_device(mac, track)
-        
-        # Read data a few times
-        for i in range(3):
-            logger.info(f"Reading BMS data (attempt {i+1})")
-            data = await reader.read_all_bms_data()
-            
-            print(f"\n--- Battery Data ---")
-            print(json.dumps(reader.get_all_batteries(), indent=2))
-            
-            print(f"\n--- Connection Status ---")
-            print(json.dumps(reader.get_connection_status(), indent=2))
-            
-            await asyncio.sleep(2)
+        if any(results.values()):
+            # Start reading data
+            reader.start_reading()
+        else:
+            logger.error("Failed to connect to any BMS devices")
     
     finally:
-        await reader.disconnect_all()
+        reader.disconnect_all()
 
 if __name__ == "__main__":
     asyncio.run(main())
