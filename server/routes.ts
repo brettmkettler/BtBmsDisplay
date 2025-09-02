@@ -3,38 +3,52 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { batteryUpdateSchema, type BatteryUpdate } from "@shared/schema";
-import { bmsIntegration } from "./bms-integration";
 import * as os from "os";
 import { execSync } from "child_process";
 
+// Python BMS API configuration
+const PYTHON_BMS_API_URL = process.env.PYTHON_BMS_API_URL || 'http://localhost:8000';
+
+// Helper function to fetch from Python API
+async function fetchFromPythonAPI(endpoint: string) {
+  try {
+    const response = await fetch(`${PYTHON_BMS_API_URL}${endpoint}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching from Python API ${endpoint}:`, error);
+    throw error;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get latest battery data from BMS
+  // Get latest battery data from Python BMS API
   app.get("/api/batteries", async (req, res) => {
     try {
-      const batteries = await bmsIntegration.readBatteryData();
-      res.json(batteries);
+      const data = await fetchFromPythonAPI('/api/batteries');
+      // Return batteries array directly to match UI expectations
+      res.json(data.batteries || []);
     } catch (error) {
-      console.error("Error fetching battery data:", error);
-      res.status(500).json({ error: "Failed to fetch battery data" });
+      console.error("Error fetching battery data from Python API:", error);
+      res.json([]); // Return empty array if no data available
     }
   });
 
-  // Get BMS connection status
+  // Get BMS connection status from Python API
   app.get("/api/bms/status", async (req, res) => {
     try {
-      const connectionStatus = bmsIntegration.getConnectionStatus();
-      const deviceStatus = bmsIntegration.getDeviceStatus();
-      const isConnected = bmsIntegration.isConnectedToBMS();
-      
-      res.json({
-        connected: isConnected,
-        tracks: connectionStatus,
-        devices: deviceStatus,
-        config: bmsIntegration.getConfig()
-      });
+      const data = await fetchFromPythonAPI('/api/bms/status');
+      res.json(data);
     } catch (error) {
-      console.error("Error fetching BMS status:", error);
-      res.status(500).json({ error: "Failed to fetch BMS status" });
+      console.error("Error fetching BMS status from Python API:", error);
+      res.status(503).json({ 
+        connected: false,
+        tracks: { left: false, right: false },
+        devices: {},
+        error: "Python BMS API unavailable"
+      });
     }
   });
 
@@ -48,36 +62,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Battery data must be an array" });
       }
 
-      // Save to storage
-      await storage.saveBatteryData(batteryData);
-
-      // Broadcast to all connected WebSocket clients
-      const connectionStatus = bmsIntegration.getConnectionStatus();
-      const update: BatteryUpdate = {
-        type: "battery_update",
-        batteries: batteryData.map(b => ({
-          batteryNumber: b.batteryNumber,
-          voltage: b.voltage,
-          amperage: b.amperage,
-          chargeLevel: b.chargeLevel,
-          temperature: b.temperature,
-          status: b.status,
-          track: b.track,
-          trackPosition: b.trackPosition,
-        })),
-        connectionStatus
-      };
-
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(update));
-        }
+      // Store the data
+      await storage.storeBatteryData(batteryData);
+      
+      res.json({ 
+        success: true, 
+        message: "Battery data updated successfully",
+        count: batteryData.length 
       });
-
-      res.json({ success: true, message: "Battery data updated successfully" });
     } catch (error) {
       console.error("Error updating battery data:", error);
       res.status(500).json({ error: "Failed to update battery data" });
+    }
+  });
+
+  // Get system information
+  app.get("/api/system", async (req, res) => {
+    try {
+      // Get system info from Python API
+      const pythonSystemInfo = await fetchFromPythonAPI('/api/system');
+      
+      // Add Node.js specific info
+      const systemInfo = {
+        ...pythonSystemInfo,
+        nodejs: {
+          version: process.version,
+          platform: process.platform,
+          arch: process.arch,
+          uptime: process.uptime(),
+          memory: process.memoryUsage()
+        },
+        proxy_status: "Connected to Python BMS API"
+      };
+      
+      res.json(systemInfo);
+    } catch (error) {
+      console.error("Error fetching system info:", error);
+      
+      // Fallback to basic Node.js info if Python API unavailable
+      const fallbackInfo = {
+        nodejs: {
+          version: process.version,
+          platform: process.platform,
+          arch: process.arch,
+          uptime: process.uptime(),
+          memory: process.memoryUsage()
+        },
+        proxy_status: "Python BMS API unavailable",
+        error: error.message
+      };
+      
+      res.json(fallbackInfo);
+    }
+  });
+
+  // Proxy reconnect request to Python API
+  app.post("/api/bms/reconnect", async (req, res) => {
+    try {
+      const response = await fetch(`${PYTHON_BMS_API_URL}/api/bms/reconnect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error reconnecting BMS via Python API:", error);
+      res.status(500).json({ error: "Failed to reconnect BMS" });
     }
   });
 
@@ -100,160 +155,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // System information API
-  app.get("/api/system", (req, res) => {
-    try {
-      const totalMem = os.totalmem();
-      const freeMem = os.freemem();
-      const usedMem = totalMem - freeMem;
-      
-      // Get CPU usage
-      const cpus = os.cpus();
-      let totalIdle = 0;
-      let totalTick = 0;
-      
-      cpus.forEach(cpu => {
-        for (const type in cpu.times) {
-          totalTick += cpu.times[type as keyof typeof cpu.times];
-        }
-        totalIdle += cpu.times.idle;
-      });
-      
-      const cpuUsage = Math.round(((totalTick - totalIdle) / totalTick) * 100);
-      
-      // Get disk usage (Linux/macOS)
-      let diskUsage = { total: 0, used: 0, available: 0 };
-      try {
-        const dfOutput = execSync('df -h /', { encoding: 'utf8' });
-        const lines = dfOutput.split('\n');
-        if (lines.length > 1) {
-          const parts = lines[1].split(/\s+/);
-          diskUsage = {
-            total: parseFloat(parts[1].replace('G', '')),
-            used: parseFloat(parts[2].replace('G', '')),
-            available: parseFloat(parts[3].replace('G', ''))
-          };
-        }
-      } catch (e) {
-        // Fallback for systems without df command
-        diskUsage = { total: 100, used: 50, available: 50 };
-      }
-
-      // Get BMS connection status for system info
-      const bmsStatus = bmsIntegration.getConnectionStatus();
-
-      const systemInfo = {
-        unitId: "J5-CONSOLE-001",
-        softwareVersion: "v2.1.4",
-        registeredTo: "BRETTKETTLER",
-        systemDate: new Date().toLocaleDateString(),
-        systemTime: new Date().toLocaleTimeString(),
-        cpuUsage: cpuUsage,
-        memoryUsage: Math.round((usedMem / totalMem) * 100),
-        internalDriveUsage: Math.round((diskUsage.used / diskUsage.total) * 100),
-        externalDriveUsage: 0, // Placeholder for external drive
-        hostname: os.hostname(),
-        platform: os.platform(),
-        arch: os.arch(),
-        uptime: Math.floor(os.uptime()),
-        bmsConnected: bmsStatus.left || bmsStatus.right,
-        bmsStatus: bmsStatus
-      };
-
-      res.json(systemInfo);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch system information" });
-    }
-  });
-
-  const httpServer = createServer(app);
-
-  // WebSocket server for real-time battery updates
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-
-  wss.on('connection', (ws) => {
-    console.log('WebSocket client connected');
-
-    // Send initial battery data and connection status
-    const sendInitialData = async () => {
-      try {
-        const batteries = await bmsIntegration.readBatteryData();
-        const connectionStatus = bmsIntegration.getConnectionStatus();
-        
-        const update: BatteryUpdate = {
-          type: "battery_update",
-          batteries: batteries.map(b => ({
-            batteryNumber: b.batteryNumber,
-            voltage: b.voltage,
-            amperage: b.amperage,
-            chargeLevel: b.chargeLevel,
-            temperature: b.temperature,
-            status: b.status,
-            track: b.track,
-            trackPosition: b.trackPosition,
-          })),
-          connectionStatus
-        };
-        
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(update));
-        }
-      } catch (error) {
-        console.error('Error sending initial WebSocket data:', error);
-      }
-    };
-
-    sendInitialData();
-
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+  const server = createServer(app);
+  
+  // WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server });
+  
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("WebSocket client connected");
+    
+    ws.on("close", () => {
+      console.log("WebSocket client disconnected");
     });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+    
+    ws.on("error", (error) => {
+      console.error("WebSocket error:", error);
     });
   });
 
-  // Real-time data broadcasting from BMS
+  // Broadcast battery data to all connected WebSocket clients
   const broadcastBatteryData = async () => {
+    if (wss.clients.size === 0) return;
+    
     try {
-      const batteries = await bmsIntegration.readBatteryData();
-      const connectionStatus = bmsIntegration.getConnectionStatus();
+      // Fetch latest data from Python API
+      const batteryData = await fetchFromPythonAPI('/api/batteries');
+      const statusData = await fetchFromPythonAPI('/api/bms/status');
       
-      const update: BatteryUpdate = {
-        type: "battery_update",
-        batteries: batteries.map(b => ({
-          batteryNumber: b.batteryNumber,
-          voltage: b.voltage,
-          amperage: b.amperage,
-          chargeLevel: b.chargeLevel,
-          temperature: b.temperature,
-          status: b.status,
-          track: b.track,
-          trackPosition: b.trackPosition,
-        })),
-        connectionStatus
-      };
+      const message = JSON.stringify({
+        type: 'batteryUpdate',
+        data: {
+          batteries: batteryData.batteries || [],
+          connectionStatus: statusData.tracks || { left: false, right: false },
+          timestamp: new Date().toISOString()
+        }
+      });
 
-      // Save to storage
-      await storage.saveBatteryData(batteries);
-
-      // Broadcast to all connected clients
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(update));
+          client.send(message);
         }
       });
     } catch (error) {
-      // Silently handle errors to avoid spam
-      if (error instanceof Error && !error.message.includes('not connected')) {
-        console.error('Error broadcasting battery data:', error);
-      }
+      console.error("Error broadcasting battery data:", error);
+      
+      // Send empty data if Python API unavailable
+      const fallbackMessage = JSON.stringify({
+        type: 'batteryUpdate',
+        data: {
+          batteries: [],
+          connectionStatus: { left: false, right: false },
+          timestamp: new Date().toISOString(),
+          error: 'Python BMS API unavailable'
+        }
+      });
+
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(fallbackMessage);
+        }
+      });
     }
   };
 
-  // Start real-time data broadcasting
+  // Broadcast battery data every 2 seconds
   setInterval(broadcastBatteryData, 2000);
 
-  return httpServer;
+  return server;
 }
