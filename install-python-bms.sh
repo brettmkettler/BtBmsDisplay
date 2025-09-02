@@ -49,10 +49,46 @@ if [ "$SCRIPT_DIR" != "$PROJECT_DIR" ]; then
     echo "📋 Copying project files to $PROJECT_DIR..."
     cp -r "$SCRIPT_DIR"/* "$PROJECT_DIR/"
     chown -R $USER:$USER "$PROJECT_DIR"
+else
+    echo "📋 Already in target directory, ensuring proper ownership..."
+    chown -R $USER:$USER "$PROJECT_DIR"
 fi
 
 # Navigate to project directory
 cd "$PROJECT_DIR"
+
+# Ensure service files exist
+if [ ! -f "$PROJECT_DIR/bms-python.service" ]; then
+    echo "⚙️ Creating bms-python.service file..."
+    cat > "$PROJECT_DIR/bms-python.service" << EOF
+[Unit]
+Description=Python BMS API Server
+After=network.target bluetooth.service
+Wants=network-online.target
+After=network-online.target
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+User=seanfuchs
+Group=seanfuchs
+WorkingDirectory=/home/seanfuchs/BtBmsDisplay
+Environment=PYTHONPATH=/home/seanfuchs/BtBmsDisplay
+Environment=PYTHON_BMS_API_URL=http://localhost:8000
+ExecStart=/usr/bin/python3 bms_api_server.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bms-python
+
+# Bluetooth permissions
+SupplementaryGroups=bluetooth
+
+[Install]
+WantedBy=multi-user.target
+EOF
+fi
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
@@ -68,9 +104,11 @@ sed -i "s/User=seanfuchs/User=$USER/g" "$PROJECT_DIR/bms-python.service"
 sed -i "s/Group=seanfuchs/Group=$USER/g" "$PROJECT_DIR/bms-python.service"
 sed -i "s|WorkingDirectory=/home/seanfuchs/BtBmsDisplay|WorkingDirectory=$PROJECT_DIR|g" "$PROJECT_DIR/bms-python.service"
 
-sed -i "s/User=seanfuchs/User=$USER/g" "$PROJECT_DIR/btbms-display.service"
-sed -i "s/Group=seanfuchs/Group=$USER/g" "$PROJECT_DIR/btbms-display.service"
-sed -i "s|WorkingDirectory=/home/seanfuchs/BtBmsDisplay|WorkingDirectory=$PROJECT_DIR|g" "$PROJECT_DIR/btbms-display.service"
+if [ -f "$PROJECT_DIR/btbms-display.service" ]; then
+    sed -i "s/User=seanfuchs/User=$USER/g" "$PROJECT_DIR/btbms-display.service"
+    sed -i "s/Group=seanfuchs/Group=$USER/g" "$PROJECT_DIR/btbms-display.service"
+    sed -i "s|WorkingDirectory=/home/seanfuchs/BtBmsDisplay|WorkingDirectory=$PROJECT_DIR|g" "$PROJECT_DIR/btbms-display.service"
+fi
 
 # Install Node.js dependencies and rebuild
 echo "📦 Installing Node.js dependencies..."
@@ -87,11 +125,15 @@ sudo systemctl stop bms-python.service || true
 # Install systemd service files
 echo "⚙️ Installing systemd service files..."
 sudo cp "$PROJECT_DIR/bms-python.service" "$SERVICE_DIR/"
-sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
+if [ -f "$PROJECT_DIR/btbms-display.service" ]; then
+    sudo cp "$PROJECT_DIR/btbms-display.service" "$SERVICE_DIR/"
+fi
 
 # Set proper permissions
 sudo chmod 644 "$SERVICE_DIR/bms-python.service"
-sudo chmod 644 "$SERVICE_DIR/btbms-display.service"
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    sudo chmod 644 "$SERVICE_DIR/btbms-display.service"
+fi
 
 # Reload systemd
 echo "🔄 Reloading systemd..."
@@ -100,7 +142,9 @@ sudo systemctl daemon-reload
 # Enable services
 echo "✅ Enabling services..."
 sudo systemctl enable bms-python.service
-sudo systemctl enable btbms-display.service
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    sudo systemctl enable btbms-display.service
+fi
 
 # Start Python BMS service first
 echo "🚀 Starting Python BMS service..."
@@ -119,8 +163,10 @@ else
 fi
 
 # Start Node.js web service
-echo "🚀 Starting Node.js web service..."
-sudo systemctl start btbms-display.service
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    echo "🚀 Starting Node.js web service..."
+    sudo systemctl start btbms-display.service
+fi
 
 # Wait for web service to be ready
 echo "⏳ Waiting for web service to start..."
@@ -145,7 +191,9 @@ echo "🎉 Python BMS Installation complete!"
 echo ""
 echo "📋 Service Status:"
 echo "  • Python BMS API: sudo systemctl status bms-python.service"
-echo "  • Node.js Web App: sudo systemctl status btbms-display.service"
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    echo "  • Node.js Web App: sudo systemctl status btbms-display.service"
+fi
 echo ""
 echo "🌐 Access the application:"
 echo "  • Web Interface: http://localhost:3000"
@@ -154,9 +202,14 @@ echo "  • API Documentation: http://localhost:8000/docs"
 echo ""
 echo "🔧 Manual Commands:"
 echo "  • View Python logs: sudo journalctl -u bms-python.service -f"
-echo "  • View Web logs: sudo journalctl -u btbms-display.service -f"
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    echo "  • View Web logs: sudo journalctl -u btbms-display.service -f"
+fi
 echo "  • Test Python API: curl http://localhost:8000/api/batteries"
-echo "  • Restart services: sudo systemctl restart bms-python.service btbms-display.service"
+echo "  • Restart services: sudo systemctl restart bms-python.service"
+if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+    echo "  • Restart services: sudo systemctl restart bms-python.service btbms-display.service"
+fi
 echo ""
 echo "🔵 Python BMS Integration:"
 echo "  • Uses Python bleak library for reliable BLE communication"
