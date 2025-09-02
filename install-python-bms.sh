@@ -110,12 +110,41 @@ if [ -f "$PROJECT_DIR/btbms-display.service" ]; then
     sed -i "s|WorkingDirectory=/home/seanfuchs/BtBmsDisplay|WorkingDirectory=$PROJECT_DIR|g" "$PROJECT_DIR/btbms-display.service"
 fi
 
-# Install Node.js dependencies and rebuild
-echo "📦 Installing Node.js dependencies..."
-npm install
+# Check if Node.js/npm is needed and available
+INSTALL_NODEJS=false
+if [ -f "$PROJECT_DIR/package.json" ]; then
+    echo "📦 Node.js project detected, checking for Node.js..."
+    if command -v npm >/dev/null 2>&1; then
+        echo "✅ npm found, will install Node.js dependencies"
+        INSTALL_NODEJS=true
+    else
+        echo "⚠️ npm not found, installing Node.js..."
+        # Install Node.js 18+ 
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt install -y nodejs
+        
+        if command -v npm >/dev/null 2>&1; then
+            echo "✅ Node.js installed successfully"
+            INSTALL_NODEJS=true
+        else
+            echo "❌ Failed to install Node.js, continuing with Python-only setup"
+            INSTALL_NODEJS=false
+        fi
+    fi
+else
+    echo "📦 No Node.js project found, Python-only setup"
+fi
 
-echo "🔨 Building the project..."
-npm run build
+# Install Node.js dependencies if available
+if [ "$INSTALL_NODEJS" = true ]; then
+    echo "📦 Installing Node.js dependencies..."
+    npm install
+    
+    echo "🔨 Building the project..."
+    npm run build
+else
+    echo "⏭️ Skipping Node.js setup, Python BMS API will run standalone"
+fi
 
 # Stop existing services
 echo "🛑 Stopping existing services..."
@@ -163,20 +192,22 @@ else
 fi
 
 # Start Node.js web service
-if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+if [ -f "$SERVICE_DIR/btbms-display.service" ] && [ "$INSTALL_NODEJS" = true ]; then
     echo "🚀 Starting Node.js web service..."
     sudo systemctl start btbms-display.service
-fi
-
-# Wait for web service to be ready
-echo "⏳ Waiting for web service to start..."
-sleep 10
-
-# Check if web service is running
-if curl -s http://localhost:3000 > /dev/null; then
-    echo "✅ Web service is running on port 3000"
+    
+    # Wait for web service to be ready
+    echo "⏳ Waiting for web service to start..."
+    sleep 10
+    
+    # Check if web service is running
+    if curl -s http://localhost:3000 > /dev/null; then
+        echo "✅ Web service is running on port 3000"
+    else
+        echo "⚠️ Web service may not be ready yet. Check with: sudo systemctl status btbms-display.service"
+    fi
 else
-    echo "⚠️ Web service may not be ready yet. Check with: sudo systemctl status btbms-display.service"
+    echo "⏭️ Skipping Node.js web service (Python-only setup)"
 fi
 
 # Check Python API
@@ -191,29 +222,35 @@ echo "🎉 Python BMS Installation complete!"
 echo ""
 echo "📋 Service Status:"
 echo "  • Python BMS API: sudo systemctl status bms-python.service"
-if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+if [ -f "$SERVICE_DIR/btbms-display.service" ] && [ "$INSTALL_NODEJS" = true ]; then
     echo "  • Node.js Web App: sudo systemctl status btbms-display.service"
 fi
 echo ""
 echo "🌐 Access the application:"
-echo "  • Web Interface: http://localhost:3000"
+if [ "$INSTALL_NODEJS" = true ]; then
+    echo "  • Web Interface: http://localhost:3000"
+fi
 echo "  • Python BMS API: http://localhost:8000"
 echo "  • API Documentation: http://localhost:8000/docs"
 echo ""
 echo "🔧 Manual Commands:"
 echo "  • View Python logs: sudo journalctl -u bms-python.service -f"
-if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
+if [ -f "$SERVICE_DIR/btbms-display.service" ] && [ "$INSTALL_NODEJS" = true ]; then
     echo "  • View Web logs: sudo journalctl -u btbms-display.service -f"
 fi
 echo "  • Test Python API: curl http://localhost:8000/api/batteries"
-echo "  • Restart services: sudo systemctl restart bms-python.service"
-if [ -f "$SERVICE_DIR/btbms-display.service" ]; then
-    echo "  • Restart services: sudo systemctl restart bms-python.service btbms-display.service"
+echo "  • Restart Python service: sudo systemctl restart bms-python.service"
+if [ -f "$SERVICE_DIR/btbms-display.service" ] && [ "$INSTALL_NODEJS" = true ]; then
+    echo "  • Restart all services: sudo systemctl restart bms-python.service btbms-display.service"
 fi
 echo ""
 echo "🔵 Python BMS Integration:"
 echo "  • Uses Python bleak library for reliable BLE communication"
 echo "  • Automatic BMS device discovery and connection"
 echo "  • Real-time data polling every 2 seconds"
-echo "  • Web UI polls Python API instead of direct BLE"
+if [ "$INSTALL_NODEJS" = true ]; then
+    echo "  • Web UI polls Python API instead of direct BLE"
+else
+    echo "  • Standalone Python API - access directly at http://localhost:8000"
+fi
 echo ""
