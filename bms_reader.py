@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Overkill Solar BMS Reader
-Connects to Overkill Solar BMS units via Bluetooth BLE using bluepy and extracts battery data.
+Connects to Overkill Solar BMS units via Bluetooth BLE using bluepy3.blte and extracts battery data.
 Based on JBD BMS protocol implementation.
 Optimized for Raspberry Pi 5.
 """
@@ -15,7 +15,7 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
-from bluepy.btle import Peripheral, DefaultDelegate, BTLEException
+from bluepy3.blte import Peripheral, DefaultDelegate, BTLEException
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -169,7 +169,7 @@ class BMSDelegate(DefaultDelegate):
             logger.error(f"Error updating battery data for {self.track}: {e}")
 
 class OverkillBMSReader:
-    """Overkill Solar BMS Bluetooth reader using bluepy"""
+    """Overkill Solar BMS Bluetooth reader using bluepy3.blte"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
