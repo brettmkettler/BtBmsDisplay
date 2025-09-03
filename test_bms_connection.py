@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BMS Connection Test Script
-Tests Bluetooth BLE connection to Overkill Solar BMS devices using bluepy3.blte.
+Tests Bluetooth BLE connection to Overkill Solar BMS devices using bluepy3.btle.
 Provides detailed diagnostics and connection verification.
 """
 
@@ -14,9 +14,9 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 try:
-    from bluepy3.blte import Peripheral, DefaultDelegate, BTLEException, Scanner
+    from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException, Scanner
 except ImportError:
-    print("ERROR: bluepy3.blte not installed. Run: pip install bluepy3.blte")
+    print("ERROR: bluepy3 not installed. Run: pip install bluepy3")
     sys.exit(1)
 
 # Configure logging
