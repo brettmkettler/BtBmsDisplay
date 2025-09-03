@@ -10,52 +10,51 @@ from bms_reader import OverkillBMSReader
 def test_bms_reader():
     """Test the BMS reader directly"""
     
-    print("=== Testing BMS Reader Directly ===")
+    print("=== Testing BMS Reader Directly (RIGHT TRACK ONLY) ===")
     
-    # Create BMS reader with config
+    # Create BMS reader with config - only RIGHT track
     config = {
-        'left_track_mac': 'A4:C1:38:7C:2D:F0',
+        'left_track_mac': None,  # Disable LEFT track
         'right_track_mac': 'E0:9F:2A:E4:94:1D',
         'connection_timeout': 15,
         'poll_interval': 2
     }
     reader = OverkillBMSReader(config)
     
-    # Connect to devices
-    print("Connecting to devices...")
-    connections = reader.connect_all_devices()
+    # Connect to RIGHT device only
+    print("Connecting to RIGHT track only...")
     
-    for track, connected in connections.items():
-        status = "✓ Connected" if connected else "✗ Failed"
-        print(f"{track.upper()} track: {status}")
-    
-    # Try reading data
-    print("\nAttempting to read BMS data...")
-    
-    for track in ['left', 'right']:
-        if connections.get(track, False):
-            print(f"\nReading {track.upper()} track...")
-            success = reader.read_bms_data(track)
+    # Manually connect just RIGHT track
+    try:
+        success = reader.connect_device('right')
+        print(f"RIGHT track: {'✓ Connected' if success else '✗ Failed'}")
+        
+        if success:
+            print("\nAttempting to read BMS data from RIGHT track...")
+            read_success = reader.read_bms_data('right')
             
-            if success:
-                print(f"✓ {track.upper()} data read successfully")
+            if read_success:
+                print("✓ RIGHT data read successfully")
                 
                 # Check if we have battery data
                 batteries = reader.get_battery_data()
-                track_batteries = [b for b in batteries if b.track == track]
+                right_batteries = [b for b in batteries if b.track == 'right']
                 
-                if track_batteries:
-                    battery = track_batteries[0]
+                if right_batteries:
+                    battery = right_batteries[0]
                     print(f"  Voltage: {battery.voltage}V")
                     print(f"  Current: {battery.current}A")
                     print(f"  SOC: {battery.soc}%")
                     print(f"  Cells: {battery.cell_voltages}")
                 else:
-                    print(f"  No battery data object created")
+                    print("  No battery data object created")
             else:
-                print(f"✗ {track.upper()} data read failed")
-                status = reader.get_connection_status()[track]
+                print("✗ RIGHT data read failed")
+                status = reader.get_connection_status()['right']
                 print(f"  Error: {status.get('error_message', 'Unknown error')}")
+        
+    except Exception as e:
+        print(f"✗ Test failed: {e}")
     
     # Cleanup
     reader.disconnect_all()
