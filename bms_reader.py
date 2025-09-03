@@ -177,6 +177,10 @@ class OverkillBMSReader:
         self.right_mac = config.get('right_track_mac', 'E0:9F:2A:E4:94:1D')
         self.connection_timeout = config.get('connection_timeout', 15)
         self.poll_interval = config.get('poll_interval', 2)
+        self.device_addresses = {
+            'left': self.left_mac,
+            'right': self.right_mac
+        }
         
         self.peripherals: Dict[str, Peripheral] = {}
         self.delegates: Dict[str, BMSDelegate] = {}
@@ -244,31 +248,48 @@ class OverkillBMSReader:
             logger.error(f"Error disconnecting from {track} track: {e}")
     
     def read_bms_data(self, track: str) -> bool:
-        """Read BMS data with improved error handling for disconnecting devices"""
+        """Read BMS data using reconnection strategy that works"""
         if track not in self.peripherals:
             return False
         
         try:
             peripheral = self.peripherals[track]
             
-            # Check if device is still connected before sending commands
+            # Try the 0x04 command (cell voltages) which works after reconnection
             try:
-                # Test connection with a simple operation
-                peripheral.getState()
-            except BTLEException:
-                logger.warning(f"{track} track BMS disconnected, attempting reconnection...")
-                self.connection_status[track].connected = False
-                self.connection_status[track].error_message = "Device disconnected"
-                return False
-            
-            # These BMS devices disconnect when receiving standard commands
-            # Set status to indicate communication protocol incompatibility
-            self.connection_status[track].error_message = "BMS protocol incompatible - device disconnects on command"
-            logger.warning(f"{track} track BMS connected but incompatible with current protocol")
-            
-            # Don't send commands that cause disconnection
-            # Instead, maintain connection status but indicate no data available
-            return False
+                peripheral.writeCharacteristic(21, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
+                peripheral.waitForNotifications(3)
+                return True
+            except BTLEException as e:
+                if "disconnected" in str(e).lower():
+                    logger.info(f"{track} track disconnected, attempting reconnection...")
+                    
+                    # Reconnect using the working pattern
+                    try:
+                        mac_address = self.device_addresses[track]
+                        peripheral = Peripheral(mac_address, addrType="public")
+                        peripheral.setDelegate(self.delegates[track])
+                        
+                        # Enable notifications
+                        peripheral.writeCharacteristic(22, b'\x01\x00', False)
+                        
+                        # Update peripheral reference
+                        self.peripherals[track] = peripheral
+                        
+                        # Try the command again after reconnection
+                        peripheral.writeCharacteristic(21, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
+                        peripheral.waitForNotifications(3)
+                        
+                        logger.info(f"{track} track reconnected and data read successfully")
+                        return True
+                        
+                    except Exception as reconnect_error:
+                        logger.error(f"Reconnection failed for {track} track: {reconnect_error}")
+                        self.connection_status[track].connected = False
+                        self.connection_status[track].error_message = f"Reconnection failed: {str(reconnect_error)}"
+                        return False
+                else:
+                    raise e
             
         except BTLEException as e:
             logger.error(f"BLE error reading from {track} track: {e}")
