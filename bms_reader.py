@@ -43,7 +43,7 @@ class BMSStatus:
     error_message: Optional[str] = None
 
 class BMSDelegate(DefaultDelegate):
-    """BLE notification delegate for BMS data"""
+    """BLE notification delegate for JBD BMS data"""
     
     def __init__(self, bms_reader, track):
         DefaultDelegate.__init__(self)
@@ -51,6 +51,7 @@ class BMSDelegate(DefaultDelegate):
         self.track = track
         self.cell_voltages = []
         self.pack_info = {}
+        self.partial_message = b''  # Store partial messages for JBD protocol
         
     def handleNotification(self, cHandle, data):
         hex_data = binascii.hexlify(data)
@@ -61,19 +62,55 @@ class BMSDelegate(DefaultDelegate):
         print(f"BMS {self.track} RX: Handle {cHandle} = {text_string}")
         
         try:
-            if text_string.find('dd04') != -1:  # Cell voltages (1-8 cells)
+            # JBD BMS sends notifications in 2 parts - combine them
+            if text_string == '00':
+                # Handshake notification - ignore
+                return
+            
+            # Check if this is a partial message (first part)
+            if text_string.startswith('dd') and len(text_string) < 40:
+                # This is likely the first part of a split message
+                self.partial_message = data
+                logger.debug(f"{self.track} track partial message stored: {text_string}")
+                return
+            
+            # Check if we have a partial message to combine
+            if self.partial_message and len(text_string) > 0:
+                # Combine partial message with current data
+                combined_data = self.partial_message + data
+                combined_hex = binascii.hexlify(combined_data).decode('utf-8')
+                logger.info(f"{self.track} track combined message: {combined_hex}")
+                print(f"BMS {self.track} COMBINED: {combined_hex}")
+                
+                # Process the combined message
+                self.process_combined_message(combined_data, combined_hex)
+                self.partial_message = b''  # Clear partial message
+                return
+            
+            # Process single complete message
+            if text_string.find('dd04') != -1:  # Cell voltages
                 logger.info(f"{self.track} track processing cell voltages: {text_string}")
                 self.process_cell_voltages(data)
             elif text_string.find('dd03') != -1:  # Pack info
                 logger.info(f"{self.track} track processing pack info: {text_string}")
                 self.process_pack_info(data)
-            elif text_string.find('77') != -1 and (len(text_string) == 28 or len(text_string) == 36):
-                logger.info(f"{self.track} track processing pack status: {text_string}")
-                self.process_pack_status(data)
             else:
                 logger.debug(f"{self.track} track unrecognized notification: {text_string}")
+                
         except Exception as e:
             logger.error(f"Error processing BMS notification for {self.track}: {e}")
+    
+    def process_combined_message(self, data, hex_string):
+        """Process combined JBD BMS message"""
+        try:
+            if hex_string.find('dd04') != -1:  # Cell voltages
+                logger.info(f"{self.track} track processing combined cell voltages: {hex_string}")
+                self.process_cell_voltages(data)
+            elif hex_string.find('dd03') != -1:  # Pack info
+                logger.info(f"{self.track} track processing combined pack info: {hex_string}")
+                self.process_pack_info(data)
+        except Exception as e:
+            logger.error(f"Error processing combined message for {self.track}: {e}")
     
     def process_cell_voltages(self, data):
         """Process cell voltage data"""
