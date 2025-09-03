@@ -55,7 +55,7 @@ def test_bms_reader():
             else:
                 print(f"✗ {track.upper()} data read failed")
                 status = reader.get_connection_status()[track]
-                print(f"  Error: {status.error_message}")
+                print(f"  Error: {status.get('error_message', 'Unknown error')}")
     
     # Cleanup
     reader.disconnect_all_devices()
