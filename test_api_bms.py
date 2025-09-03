@@ -58,7 +58,7 @@ def test_bms_reader():
                 print(f"  Error: {status.get('error_message', 'Unknown error')}")
     
     # Cleanup
-    reader.disconnect_all_devices()
+    reader.disconnect_all()
     print("\n✓ Disconnected all devices")
 
 if __name__ == "__main__":
