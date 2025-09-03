@@ -199,6 +199,13 @@ class OverkillBMSReader:
             delegate = BMSDelegate(self, track)
             peripheral.setDelegate(delegate)
             
+            # Enable notifications on handle 22 (CCCD for handle 21)
+            try:
+                peripheral.writeCharacteristic(22, b'\x01\x00', False)
+                logger.info(f"✓ Notifications enabled for {track} track")
+            except Exception as e:
+                logger.warning(f"Could not enable notifications for {track} track: {e}")
+            
             # Store connections
             self.peripherals[track] = peripheral
             self.delegates[track] = delegate
@@ -244,12 +251,12 @@ class OverkillBMSReader:
         try:
             peripheral = self.peripherals[track]
             
-            # Request pack info (0x03)
-            peripheral.writeCharacteristic(0x15, b'\xdd\xa5\x03\x00\xff\xfd\x77', False)
+            # Request pack info (0x05)
+            peripheral.writeCharacteristic(17, b'\xdd\xa5\x05\x00\xff\xfb\x77', False)
             peripheral.waitForNotifications(2)
             
             # Request cell voltages (0x04)  
-            peripheral.writeCharacteristic(0x15, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
+            peripheral.writeCharacteristic(17, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
             peripheral.waitForNotifications(2)
             
             return True
