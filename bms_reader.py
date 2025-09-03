@@ -56,13 +56,22 @@ class BMSDelegate(DefaultDelegate):
         hex_data = binascii.hexlify(data)
         text_string = hex_data.decode('utf-8')
         
+        # Add debug logging to see all notifications
+        logger.info(f"{self.track} track notification - Handle: {cHandle}, Data: {text_string}")
+        print(f"BMS {self.track} RX: Handle {cHandle} = {text_string}")
+        
         try:
             if text_string.find('dd04') != -1:  # Cell voltages (1-8 cells)
+                logger.info(f"{self.track} track processing cell voltages: {text_string}")
                 self.process_cell_voltages(data)
             elif text_string.find('dd03') != -1:  # Pack info
+                logger.info(f"{self.track} track processing pack info: {text_string}")
                 self.process_pack_info(data)
             elif text_string.find('77') != -1 and (len(text_string) == 28 or len(text_string) == 36):
+                logger.info(f"{self.track} track processing pack status: {text_string}")
                 self.process_pack_status(data)
+            else:
+                logger.debug(f"{self.track} track unrecognized notification: {text_string}")
         except Exception as e:
             logger.error(f"Error processing BMS notification for {self.track}: {e}")
     
