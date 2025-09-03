@@ -251,13 +251,9 @@ class OverkillBMSReader:
         try:
             peripheral = self.peripherals[track]
             
-            # Request pack info (0x05)
-            peripheral.writeCharacteristic(17, b'\xdd\xa5\x05\x00\xff\xfb\x77', False)
-            peripheral.waitForNotifications(2)
-            
-            # Request cell voltages (0x04)  
-            peripheral.writeCharacteristic(17, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
-            peripheral.waitForNotifications(2)
+            # Request cell voltages (0x04) - this works reliably
+            peripheral.writeCharacteristic(21, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
+            peripheral.waitForNotifications(3)
             
             return True
             
