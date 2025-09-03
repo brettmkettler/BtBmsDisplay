@@ -12,8 +12,14 @@ def test_bms_reader():
     
     print("=== Testing BMS Reader Directly ===")
     
-    # Create BMS reader
-    reader = OverkillBMSReader()
+    # Create BMS reader with config
+    config = {
+        'left_track_mac': 'A4:C1:38:7C:2D:F0',
+        'right_track_mac': 'E0:9F:2A:E4:94:1D',
+        'connection_timeout': 15,
+        'poll_interval': 2
+    }
+    reader = OverkillBMSReader(config)
     
     # Connect to devices
     print("Connecting to devices...")
