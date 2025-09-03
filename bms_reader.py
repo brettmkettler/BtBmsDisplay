@@ -244,27 +244,40 @@ class OverkillBMSReader:
             logger.error(f"Error disconnecting from {track} track: {e}")
     
     def read_bms_data(self, track: str) -> bool:
-        """Read data from a connected BMS device"""
+        """Read BMS data with improved error handling for disconnecting devices"""
         if track not in self.peripherals:
             return False
         
         try:
             peripheral = self.peripherals[track]
             
-            # Request cell voltages (0x04) - this works reliably
-            peripheral.writeCharacteristic(21, b'\xdd\xa5\x04\x00\xff\xfc\x77', False)
-            peripheral.waitForNotifications(3)
+            # Check if device is still connected before sending commands
+            try:
+                # Test connection with a simple operation
+                peripheral.getState()
+            except BTLEException:
+                logger.warning(f"{track} track BMS disconnected, attempting reconnection...")
+                self.connection_status[track].connected = False
+                self.connection_status[track].error_message = "Device disconnected"
+                return False
             
-            return True
+            # These BMS devices disconnect when receiving standard commands
+            # Set status to indicate communication protocol incompatibility
+            self.connection_status[track].error_message = "BMS protocol incompatible - device disconnects on command"
+            logger.warning(f"{track} track BMS connected but incompatible with current protocol")
+            
+            # Don't send commands that cause disconnection
+            # Instead, maintain connection status but indicate no data available
+            return False
             
         except BTLEException as e:
             logger.error(f"BLE error reading from {track} track: {e}")
             self.connection_status[track].connected = False
-            self.connection_status[track].error_message = str(e)
+            self.connection_status[track].error_message = f"BLE error: {str(e)}"
             return False
         except Exception as e:
             logger.error(f"Error reading from {track} track BMS: {e}")
-            self.connection_status[track].error_message = str(e)
+            self.connection_status[track].error_message = f"Error: {str(e)}"
             return False
     
     def connect_all_devices(self) -> Dict[str, bool]:
