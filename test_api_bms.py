@@ -26,7 +26,7 @@ def test_bms_reader():
     
     # Manually connect just RIGHT track
     try:
-        success = reader.connect_device('right')
+        success = reader.connect_to_device('E0:9F:2A:E4:94:1D', 'right')
         print(f"RIGHT track: {'✓ Connected' if success else '✗ Failed'}")
         
         if success:
