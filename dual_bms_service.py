@@ -190,30 +190,32 @@ class JBDBMSReader:
             return False
     
     def read_data(self) -> bool:
-        """Read BMS data using sequential command approach"""
+        """Read BMS data using proper JBD protocol - write requests to handles 0x03 and 0x04"""
         if not self.connected or not self.peripheral:
             return False
         
-        # JBD BMS commands from working script
+        # JBD BMS protocol: write requests to specific handles (not characteristics)
         commands = [
             {
                 'name': 'Basic Info (0x03)',
+                'handle': 0x03,
                 'data': b'\xdd\xa5\x03\x00\xff\xfd\x77'
             },
             {
                 'name': 'Cell Voltages (0x04)', 
+                'handle': 0x04,
                 'data': b'\xdd\xa5\x04\x00\xff\xfc\x77'
             }
         ]
         
         for i, cmd in enumerate(commands):
-            print(f"Sending {cmd['name']} to {self.track}...")
+            print(f"Sending {cmd['name']} to {self.track} handle {cmd['handle']}...")
             
             try:
-                # Send command
-                self.peripheral.writeCharacteristic(21, cmd['data'], False)
+                # JBD protocol: write request to specific handle (not characteristic)
+                self.peripheral.writeCharacteristic(cmd['handle'], cmd['data'], False)
                 
-                # Wait for response
+                # Wait for notification response
                 start_time = time.time()
                 while time.time() - start_time < 3:
                     if self.peripheral.waitForNotifications(0.5):
@@ -229,6 +231,16 @@ class JBDBMSReader:
                     # First command disconnected, reconnect for second
                     print(f"⚠ {self.track} disconnected on first command, reconnecting...")
                     if self.reconnect():
+                        # Retry the same command after reconnection
+                        try:
+                            self.peripheral.writeCharacteristic(cmd['handle'], cmd['data'], False)
+                            start_time = time.time()
+                            while time.time() - start_time < 3:
+                                if self.peripheral.waitForNotifications(0.5):
+                                    print(f"✓ {self.track} response received after reconnect")
+                                    break
+                        except:
+                            pass
                         continue
                     else:
                         return False
