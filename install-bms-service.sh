@@ -32,7 +32,8 @@ Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
 Environment=PYTHONPATH=$INSTALL_DIR
-ExecStart=/usr/bin/python3 dual_bms_service.py
+Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
+ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
 StandardOutput=syslog
