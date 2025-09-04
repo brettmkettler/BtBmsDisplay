@@ -157,11 +157,11 @@ class MyDelegate(DefaultDelegate):		    # notification responses
 			cellinfo2(data)		
 try:
     print('attempting to connect')		
-    bms = Peripheral(args.BLEaddress,addrType="public")
+    bms = Peripheral(args.BLEaddress,addrType="random")
 except BTLEException as ex:
     time.sleep(10)
     print('2nd try connect')
-    bms = Peripheral(args.BLEaddress,addrType="public")
+    bms = Peripheral(args.BLEaddress,addrType="random")
 except BTLEException as ex:
     print('cannot connect')
     exit()
