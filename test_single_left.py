@@ -1,32 +1,22 @@
 #!/usr/bin/env python3
 """
-Dual BMS Service - Alternates between left and right track BMS units
-Provides REST API for UI to consume battery data with timestamps
+Test single LEFT BMS connection to isolate the issue
 """
 
 import sys
 import time
-import json
 import logging
-import threading
+import binascii
+import struct
 from datetime import datetime
-from typing import Optional, Dict
-from flask import Flask, jsonify
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+from typing import Optional, List
 
 try:
     from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException
 except ImportError:
     print("ERROR: bluepy3 not installed. Run: pip install bluepy3")
     sys.exit(1)
-
-# Import our existing JBD BMS classes
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Copy the classes from jbd_bms_reader.py
-import binascii
-import struct
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -41,9 +31,8 @@ class BatteryData:
     total_capacity: float = 0.0
     soc: float = 0.0
     cycles: int = 0
-    cell_voltages: list = None
+    cell_voltages: List[float] = None
     last_update: Optional[str] = None
-    connection_status: str = "disconnected"
 
     def __post_init__(self):
         if self.cell_voltages is None:
@@ -118,7 +107,6 @@ class JBDBMSDelegate(DefaultDelegate):
             self.battery_data.soc = (remain / capacity * 100) if capacity > 0 else 0
             self.battery_data.cycles = cycles
             self.battery_data.last_update = datetime.now().isoformat()
-            self.battery_data.connection_status = "connected"
             
             print(f"✓ {self.track} Pack: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A, {self.battery_data.soc:.1f}%")
             
@@ -267,137 +255,39 @@ class JBDBMSReader:
                 pass
         self.connected = False
 
-class DualBMSService:
-    """Service that alternates between left and right BMS units"""
+def test_left_bms_repeatedly():
+    """Test LEFT BMS multiple times with delays"""
+    LEFT_MAC = "A4:C1:38:7C:2D:F0"
     
-    def __init__(self, left_mac: str, right_mac: str, poll_interval: int = 5):
-        self.left_mac = left_mac
-        self.right_mac = right_mac
-        self.poll_interval = poll_interval
+    for attempt in range(5):
+        print(f"\n=== Attempt {attempt + 1}/5 ===")
         
-        # Data storage
-        self.battery_data = {
-            'left': BatteryData(track='left'),
-            'right': BatteryData(track='right')
-        }
-        
-        # Service control
-        self.running = False
-        self.thread = None
-        
-        # Flask app for API
-        self.app = Flask(__name__)
-        self.setup_routes()
-    
-    def setup_routes(self):
-        """Setup Flask API routes"""
-        
-        @self.app.route('/api/battery/status', methods=['GET'])
-        def get_battery_status():
-            """Get current battery status for both tracks"""
-            return jsonify({
-                'left': asdict(self.battery_data['left']),
-                'right': asdict(self.battery_data['right']),
-                'service_status': 'running' if self.running else 'stopped',
-                'last_poll': datetime.now().isoformat()
-            })
-        
-        @self.app.route('/api/battery/left', methods=['GET'])
-        def get_left_battery():
-            """Get left track battery data"""
-            return jsonify(asdict(self.battery_data['left']))
-        
-        @self.app.route('/api/battery/right', methods=['GET'])
-        def get_right_battery():
-            """Get right track battery data"""
-            return jsonify(asdict(self.battery_data['right']))
-    
-    def poll_bms_data(self):
-        """Main polling loop - alternates between left and right with longer delays"""
-        logger.info("Starting BMS polling service...")
-        
-        while self.running:
-            # Poll left track
-            self.poll_single_bms(self.left_mac, 'left')
-            
-            if not self.running:
-                break
-                
-            # Longer pause between tracks to let BMS recover
-            time.sleep(10)
-            
-            # Poll right track
-            self.poll_single_bms(self.right_mac, 'right')
-            
-            if not self.running:
-                break
-                
-            # Wait for next cycle - much longer to prevent device lockup
-            time.sleep(self.poll_interval + 15)
-    
-    def poll_single_bms(self, mac_address: str, track: str):
-        """Poll a single BMS unit"""
-        reader = JBDBMSReader(mac_address, track)
+        reader = JBDBMSReader(LEFT_MAC, 'left')
         
         try:
             if reader.connect():
                 if reader.read_data():
-                    battery_data = reader.get_battery_data()
-                    if battery_data:
-                        self.battery_data[track] = battery_data
-                        print(f"✓ {track} data updated: {battery_data.voltage:.2f}V, {battery_data.soc:.1f}%")
+                    battery = reader.get_battery_data()
+                    if battery:
+                        print(f"\n--- LEFT Battery Data ---")
+                        print(f"Voltage: {battery.voltage:.2f}V")
+                        print(f"Current: {battery.current:.2f}A")
+                        print(f"SOC: {battery.soc:.1f}%")
+                        print(f"Cells: {[f'{c:.3f}V' for c in battery.cell_voltages]}")
                     else:
-                        print(f"⚠ {track} no data received")
-                        self.battery_data[track].connection_status = "no_data"
+                        print(f"✗ No battery data received")
                 else:
-                    print(f"✗ {track} data read failed")
-                    self.battery_data[track].connection_status = "read_failed"
+                    print(f"✗ Data read failed")
             else:
-                print(f"✗ {track} connection failed")
-                self.battery_data[track].connection_status = "connection_failed"
-                
-        except Exception as e:
-            print(f"✗ {track} polling error: {e}")
-            self.battery_data[track].connection_status = "error"
+                print(f"✗ Connection failed")
+        
         finally:
             reader.disconnect()
-    
-    def start_service(self):
-        """Start the polling service"""
-        if not self.running:
-            self.running = True
-            self.thread = threading.Thread(target=self.poll_bms_data, daemon=True)
-            self.thread.start()
-            logger.info("BMS service started")
-    
-    def stop_service(self):
-        """Stop the polling service"""
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=10)
-        logger.info("BMS service stopped")
-    
-    def run_api_server(self, host='0.0.0.0', port=5000):
-        """Run the Flask API server"""
-        logger.info(f"Starting API server on {host}:{port}")
-        self.app.run(host=host, port=port, debug=False)
+        
+        # Wait between attempts
+        if attempt < 4:
+            print(f"Waiting 15 seconds before next attempt...")
+            time.sleep(15)
 
 if __name__ == "__main__":
-    # Configuration
-    LEFT_TRACK_MAC = "A4:C1:38:7C:2D:F0"
-    RIGHT_TRACK_MAC = "E0:9F:2A:E4:94:1D"
-    POLL_INTERVAL = 5  # seconds
-    
-    # Create service
-    service = DualBMSService(LEFT_TRACK_MAC, RIGHT_TRACK_MAC, POLL_INTERVAL)
-    
-    try:
-        # Start polling service
-        service.start_service()
-        
-        # Run API server (blocking)
-        service.run_api_server(host='0.0.0.0', port=5050)
-        
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-        service.stop_service()
+    test_left_bms_repeatedly()
