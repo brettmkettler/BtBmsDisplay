@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Dual BMS Service - Alternates between left and right track BMS units
-Provides REST API for UI to consume battery data with timestamps
+Provides REST API for UI to consume battery data with timestamps.
 """
 
 import sys
@@ -9,11 +9,11 @@ import time
 import json
 import logging
 import threading
+import signal
 from datetime import datetime
 from typing import Optional, Dict
 from flask import Flask, jsonify
 from dataclasses import dataclass, asdict
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 try:
     from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException
@@ -34,20 +34,6 @@ logger = logging.getLogger(__name__)
 
 class TimeoutError(Exception):
     pass
-
-class ConnectionTimeout:
-    """Thread-safe timeout mechanism for BLE connections"""
-    def __init__(self, timeout_seconds):
-        self.timeout = timeout_seconds
-        self.start_time = None
-        
-    def start(self):
-        self.start_time = time.time()
-        
-    def is_expired(self):
-        if self.start_time is None:
-            return False
-        return (time.time() - self.start_time) > self.timeout
 
 def timeout_handler(signum, frame):
     raise TimeoutError("Connection timeout")
@@ -186,50 +172,48 @@ class JBDBMSReader:
         self.delegate = None
         self.connected = False
 
-    def connect_with_timeout(self, timeout_seconds=10):
-        """Attempt connection in a separate thread with timeout"""
-        def _connect():
-            try:
-                peripheral = Peripheral(self.mac_address, addrType="public")
-                return peripheral
-            except Exception as e:
-                raise e
-        
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_connect)
-            try:
-                return future.result(timeout=timeout_seconds)
-            except FutureTimeoutError:
-                return None
-
     def connect(self):
-        """Connect using threaded timeout to prevent hanging"""
+        """Connect using exact pattern from working script with timeout"""
         try:
             print(f"Attempting to connect to {self.track}: {self.mac_address}")
             
-            # Try connection with timeout
-            peripheral = self.connect_with_timeout(10)
+            # Set up timeout signal (10 seconds)
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(10)
             
-            if peripheral is None:
+            try:
+                # First connection attempt
+                try:
+                    self.peripheral = Peripheral(self.mac_address, addrType="public")
+                except BTLEException:
+                    print(f"2nd try connect to {self.track}")
+                    time.sleep(2)
+                    self.peripheral = Peripheral(self.mac_address, addrType="public")
+                
+                # Cancel timeout
+                signal.alarm(0)
+                
+                # Set up delegate for notifications
+                self.delegate = JBDBMSDelegate(self.track)
+                self.peripheral.setDelegate(self.delegate)
+                
+                self.connected = True
+                return True
+                
+            except TimeoutError:
                 print(f"✗ Connection timeout for {self.track}")
+                signal.alarm(0)
+                self.connected = False
+                return False
+            except BTLEException as e:
+                print(f"✗ Cannot connect to {self.track}: {e}")
+                signal.alarm(0)
+                self.connected = False
                 return False
             
-            self.peripheral = peripheral
-            print(f"✓ Connected to {self.track}: {self.mac_address}")
-            
-            # Set up delegate for notifications
-            self.delegate = JBDBMSDelegate(self.track)
-            self.peripheral.setDelegate(self.delegate)
-            
-            self.connected = True
-            return True
-            
-        except BTLEException as e:
-            print(f"✗ Cannot connect to {self.track}: {e}")
-            self.connected = False
-            return False
         except Exception as e:
             print(f"✗ Connection error for {self.track}: {e}")
+            signal.alarm(0)
             self.connected = False
             return False
 
