@@ -10,25 +10,14 @@ echo "=== Installing BMS API Service ==="
 # Get current directory
 INSTALL_DIR=$(pwd)
 SERVICE_NAME="j5-bms-api"
-VENV_PATH="/home/seanfuchs/Desktop/venv"
 
 echo "Installation directory: $INSTALL_DIR"
-echo "Virtual environment: $VENV_PATH"
-
-# Add user to bluetooth group
-echo "Adding user to bluetooth group..."
-sudo usermod -a -G bluetooth $USER
 
 # Check if dual_bms_service.py exists
 if [ ! -f "dual_bms_service.py" ]; then
     echo "Error: dual_bms_service.py not found. Make sure you're in the correct directory."
     exit 1
 fi
-
-# Fix file permissions
-echo "Setting file permissions..."
-chmod +r dual_bms_service.py
-chmod +x dual_bms_service.py
 
 # Create systemd service file
 echo "Creating systemd service file..."
@@ -41,20 +30,15 @@ Wants=network.target bluetooth.target
 [Service]
 Type=simple
 User=$USER
-Group=bluetooth
-WorkingDirectory=${INSTALL_DIR}
-Environment=PYTHONPATH=${INSTALL_DIR}
-Environment=PATH=${VENV_PATH}/bin:\$PATH
-Environment=PYTHONUNBUFFERED=1
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=${VENV_PATH}/bin/python dual_bms_service.py
+WorkingDirectory=$INSTALL_DIR
+Environment=PYTHONPATH=$INSTALL_DIR
+Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
+ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
-StandardOutput=journal
-StandardError=journal
+StandardOutput=syslog
+StandardError=syslog
 SyslogIdentifier=${SERVICE_NAME}
-CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
-AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
 
 [Install]
 WantedBy=multi-user.target
