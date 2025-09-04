@@ -9,7 +9,6 @@ import time
 import json
 import logging
 import threading
-import signal
 from datetime import datetime
 from typing import Optional, Dict
 from flask import Flask, jsonify
@@ -34,6 +33,20 @@ logger = logging.getLogger(__name__)
 
 class TimeoutError(Exception):
     pass
+
+class ConnectionTimeout:
+    """Thread-safe timeout mechanism for BLE connections"""
+    def __init__(self, timeout_seconds):
+        self.timeout = timeout_seconds
+        self.start_time = None
+        
+    def start(self):
+        self.start_time = time.time()
+        
+    def is_expired(self):
+        if self.start_time is None:
+            return False
+        return (time.time() - self.start_time) > self.timeout
 
 def timeout_handler(signum, frame):
     raise TimeoutError("Connection timeout")
@@ -173,47 +186,59 @@ class JBDBMSReader:
         self.connected = False
 
     def connect(self):
-        """Connect using exact pattern from working script with timeout"""
+        """Connect using exact pattern from working script with thread-safe timeout"""
         try:
             print(f"Attempting to connect to {self.track}: {self.mac_address}")
             
-            # Set up timeout signal (10 seconds)
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)
+            # Create timeout tracker
+            timeout = ConnectionTimeout(10)  # 10 second timeout
+            timeout.start()
             
-            try:
-                # First connection attempt
+            # First connection attempt with timeout checking
+            peripheral = None
+            connected = False
+            
+            for attempt in range(2):  # Try twice like original
+                if timeout.is_expired():
+                    print(f"✗ Connection timeout for {self.track}")
+                    return False
+                    
                 try:
-                    self.peripheral = Peripheral(self.mac_address, addrType="public")
-                except BTLEException:
-                    print(f"2nd try connect to {self.track}")
-                    time.sleep(2)
-                    self.peripheral = Peripheral(self.mac_address, addrType="public")
-                
-                # Cancel timeout
-                signal.alarm(0)
-                
-                # Set up delegate for notifications
-                self.delegate = JBDBMSDelegate(self.track)
-                self.peripheral.setDelegate(self.delegate)
-                
-                self.connected = True
-                return True
-                
-            except TimeoutError:
-                print(f"✗ Connection timeout for {self.track}")
-                signal.alarm(0)
-                self.connected = False
+                    if attempt > 0:
+                        print(f"2nd try connect to {self.track}")
+                        time.sleep(2)
+                        
+                    # Check timeout before attempting connection
+                    if timeout.is_expired():
+                        print(f"✗ Connection timeout for {self.track}")
+                        return False
+                        
+                    peripheral = Peripheral(self.mac_address, addrType="public")
+                    connected = True
+                    break
+                    
+                except BTLEException as e:
+                    if attempt == 1:  # Last attempt
+                        print(f"✗ Cannot connect to {self.track}: {e}")
+                        return False
+                    continue
+            
+            if not connected or timeout.is_expired():
+                print(f"✗ Connection failed or timeout for {self.track}")
                 return False
-            except BTLEException as e:
-                print(f"✗ Cannot connect to {self.track}: {e}")
-                signal.alarm(0)
-                self.connected = False
-                return False
+                
+            self.peripheral = peripheral
+            print(f"✓ Connected to {self.track}: {self.mac_address}")
+            
+            # Set up delegate for notifications
+            self.delegate = JBDBMSDelegate(self.track)
+            self.peripheral.setDelegate(self.delegate)
+            
+            self.connected = True
+            return True
             
         except Exception as e:
             print(f"✗ Connection error for {self.track}: {e}")
-            signal.alarm(0)
             self.connected = False
             return False
 
