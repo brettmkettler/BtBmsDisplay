@@ -148,126 +148,221 @@ class JBDBMSDelegate(DefaultDelegate):
 class JBDBMSReader:
     """JBD BMS Reader using working connection logic"""
     
-    def __init__(self, mac_address: str, track: str):
+    def __init__(self, mac_address, track):
         self.mac_address = mac_address
         self.track = track
         self.peripheral = None
-        self.delegate = None
+        self.service = None
+        self.characteristic = None
         self.connected = False
-    
-    def connect(self) -> bool:
-        """Connect using working logic from original script"""
+        
+        # Correct JBD BMS UUIDs from reference implementation
+        self.service_uuid = "0000ffe0-0000-1000-8000-00805f9b34fb"
+        self.char_uuid = "0000ffe1-0000-1000-8000-00805f9b34fb"
+        
+        # Protocol constants
+        self.MIN_CELL_V = 2.5   # LiFePO4 min voltage for 0%
+        self.MAX_CELL_V = 3.65  # LiFePO4 max voltage for 100%
+
+    def connect(self):
+        """Connect to the BMS device"""
         try:
             print(f"Connecting to {self.track} track: {self.mac_address}")
             
             # Step 1: Connect
             self.peripheral = Peripheral(self.mac_address, addrType="public")
             
-            # Step 2: Set delegate
-            self.delegate = JBDBMSDelegate(self.track)
-            self.peripheral.setDelegate(self.delegate)
+            # Step 2: Get service and characteristic using correct UUIDs
+            self.service = self.peripheral.getServiceByUUID(self.service_uuid)
+            characteristics = self.service.getCharacteristics(self.char_uuid)
             
-            # Step 3: Enable notifications
-            try:
-                self.peripheral.writeCharacteristic(22, b'\x01\x00', False)
-                print(f"✓ {self.track} notifications enabled on handle 22")
-            except Exception as e:
-                # Try other handles
-                for handle in [23, 24, 25]:
-                    try:
-                        self.peripheral.writeCharacteristic(handle, b'\x01\x00', False)
-                        print(f"✓ {self.track} notifications enabled on handle {handle}")
-                        break
-                    except:
-                        continue
-            
+            if not characteristics:
+                raise Exception(f"Characteristic {self.char_uuid} not found")
+                
+            self.characteristic = characteristics[0]
             self.connected = True
             print(f"✓ {self.track} connected successfully")
             return True
             
         except Exception as e:
             print(f"✗ {self.track} connection failed: {e}")
+            self.connected = False
             return False
     
-    def read_data(self) -> bool:
-        """Read BMS data using proper JBD protocol - write requests to handles 0x03 and 0x04"""
-        if not self.connected or not self.peripheral:
-            return False
-        
-        # JBD BMS protocol: write requests to specific handles (not characteristics)
-        commands = [
-            {
-                'name': 'Basic Info (0x03)',
-                'handle': 0x03,
-                'data': b'\xdd\xa5\x03\x00\xff\xfd\x77'
-            },
-            {
-                'name': 'Cell Voltages (0x04)', 
-                'handle': 0x04,
-                'data': b'\xdd\xa5\x04\x00\xff\xfc\x77'
-            }
-        ]
-        
-        for i, cmd in enumerate(commands):
-            print(f"Sending {cmd['name']} to {self.track} handle {cmd['handle']}...")
+    def _send_cmd(self, cmd):
+        """Send command and read response"""
+        if not self.connected or not self.characteristic:
+            raise Exception("Not connected to BMS")
             
-            try:
-                # JBD protocol: write request to specific handle (not characteristic)
-                self.peripheral.writeCharacteristic(cmd['handle'], cmd['data'], False)
-                
-                # Wait for notification response
-                start_time = time.time()
-                while time.time() - start_time < 3:
-                    if self.peripheral.waitForNotifications(0.5):
-                        print(f"✓ {self.track} response received")
-                        break
+        try:
+            # Send command
+            self.characteristic.write(bytes(cmd))
+            time.sleep(0.1)  # Wait for response
+            
+            # Read response
+            response = bytearray(self.characteristic.read())
+            return response
+            
+        except Exception as e:
+            print(f"Command failed: {e}")
+            raise
+
+    def get_basic_info(self):
+        """Get basic BMS information using correct JBD protocol"""
+        try:
+            # Correct JBD command for basic info
+            cmd = [0xDD, 0xA5, 0x03, 0x00, 0xFF, 0xFD, 0x77]
+            data = self._send_cmd(cmd)
+            
+            # Validate response format
+            if len(data) < 4 or data[0] != 0xDD or data[1] != 0x00 or data[-1] != 0x77:
+                raise ValueError("Invalid basic response format")
+            
+            pos = 3  # Skip header
+            len_ = data[2]
+            
+            # Parse total voltage (2 bytes, /100 for volts)
+            total_v = ((data[pos] << 8) | data[pos + 1]) / 100.0
+            pos += 2
+            
+            # Parse current (2 bytes, signed, /100 for amps)
+            curr_raw = (data[pos] << 8) | data[pos + 1]
+            current = curr_raw / 100.0 if curr_raw < 0x8000 else -(0x10000 - curr_raw) / 100.0
+            pos += 2
+            
+            # Parse remaining capacity (2 bytes, /100 for Ah)
+            res_cap = ((data[pos] << 8) | data[pos + 1]) / 100.0
+            pos += 2
+            
+            # Parse nominal capacity (2 bytes, /100 for Ah)
+            nom_cap = ((data[pos] << 8) | data[pos + 1]) / 100.0
+            pos += 2
+            
+            # Skip cycles, date, balance, protection, version (9 bytes total)
+            pos += 2 + 2 + 2 + 2 + 1
+            
+            # Parse state of charge (1 byte, percentage)
+            soc = data[pos] if pos < len(data) else 0
+            
+            return {
+                'voltage': total_v,
+                'current': current,
+                'remaining_capacity': res_cap,
+                'nominal_capacity': nom_cap,
+                'soc': soc,
+                'power': total_v * current
+            }
+            
+        except Exception as e:
+            print(f"Failed to get basic info from {self.track}: {e}")
+            return None
+
+    def get_cell_voltages(self):
+        """Get individual cell voltages using correct JBD protocol"""
+        try:
+            # Correct JBD command for cell voltages
+            cmd = [0xDD, 0xA5, 0x04, 0x00, 0xFF, 0xFC, 0x77]
+            data = self._send_cmd(cmd)
+            
+            # Validate response format
+            if len(data) < 4 or data[0] != 0xDD or data[1] != 0x00 or data[-1] != 0x77:
+                raise ValueError("Invalid cells response format")
+            
+            pos = 3
+            len_ = data[2]
+            num_cells = len_ // 2
+            
+            cells = []
+            for i in range(num_cells):
+                if pos + 1 < len(data):
+                    # Parse cell voltage (2 bytes, /1000 for volts)
+                    v = ((data[pos] << 8) | data[pos + 1]) / 1000.0
+                    cells.append(v)
+                    pos += 2
                 else:
-                    print(f"⚠ {self.track} no response to {cmd['name']}")
+                    break
+            
+            return cells
+            
+        except Exception as e:
+            print(f"Failed to get cell voltages from {self.track}: {e}")
+            return []
+
+    def get_all_data(self):
+        """Get all BMS data"""
+        if not self.connected:
+            return None
+            
+        try:
+            basic_info = self.get_basic_info()
+            cell_voltages = self.get_cell_voltages()
+            
+            if basic_info is None:
+                return None
                 
-                time.sleep(0.5)  # Brief pause between commands
+            # Calculate cell statistics
+            if cell_voltages:
+                min_cell = min(cell_voltages)
+                max_cell = max(cell_voltages)
+                avg_cell = sum(cell_voltages) / len(cell_voltages)
                 
-            except BTLEException as e:
-                if "disconnected" in str(e).lower() and i == 0:
-                    # First command disconnected, reconnect for second
-                    print(f"⚠ {self.track} disconnected on first command, reconnecting...")
-                    if self.reconnect():
-                        # Retry the same command after reconnection
-                        try:
-                            self.peripheral.writeCharacteristic(cmd['handle'], cmd['data'], False)
-                            start_time = time.time()
-                            while time.time() - start_time < 3:
-                                if self.peripheral.waitForNotifications(0.5):
-                                    print(f"✓ {self.track} response received after reconnect")
-                                    break
-                        except:
-                            pass
-                        continue
+                # Calculate cell balance (difference between min and max)
+                cell_balance = max_cell - min_cell
+                
+                # Calculate individual cell percentages
+                cell_percentages = []
+                for voltage in cell_voltages:
+                    if voltage <= self.MIN_CELL_V:
+                        percentage = 0
+                    elif voltage >= self.MAX_CELL_V:
+                        percentage = 100
                     else:
-                        return False
-                else:
-                    print(f"✗ {self.track} error: {e}")
-                    return False
-        
-        return True
-    
-    def reconnect(self) -> bool:
+                        percentage = ((voltage - self.MIN_CELL_V) / (self.MAX_CELL_V - self.MIN_CELL_V)) * 100
+                    cell_percentages.append(round(percentage, 1))
+            else:
+                min_cell = max_cell = avg_cell = cell_balance = 0
+                cell_percentages = []
+            
+            return {
+                'name': self.track,
+                'connected': True,
+                'voltage': basic_info['voltage'],
+                'current': basic_info['current'],
+                'power': basic_info['power'],
+                'soc': basic_info['soc'],
+                'remaining_capacity': basic_info['remaining_capacity'],
+                'nominal_capacity': basic_info['nominal_capacity'],
+                'cell_voltages': cell_voltages,
+                'cell_percentages': cell_percentages,
+                'min_cell_voltage': min_cell,
+                'max_cell_voltage': max_cell,
+                'avg_cell_voltage': avg_cell,
+                'cell_balance': cell_balance,
+                'num_cells': len(cell_voltages),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            print(f"Failed to get data from {self.track}: {e}")
+            return None
+
+    def reconnect(self):
         """Reconnect after disconnection"""
         try:
             self.peripheral = Peripheral(self.mac_address, addrType="public")
-            self.peripheral.setDelegate(self.delegate)
-            self.peripheral.writeCharacteristic(22, b'\x01\x00', False)
+            self.service = self.peripheral.getServiceByUUID(self.service_uuid)
+            characteristics = self.service.getCharacteristics(self.char_uuid)
+            
+            if not characteristics:
+                raise Exception(f"Characteristic {self.char_uuid} not found")
+                
+            self.characteristic = characteristics[0]
             print(f"✓ {self.track} reconnected")
             return True
         except Exception as e:
             print(f"✗ {self.track} reconnection failed: {e}")
             self.connected = False
             return False
-    
-    def get_battery_data(self) -> Optional[BatteryData]:
-        """Get parsed battery data"""
-        if self.delegate and self.delegate.battery_data.last_update:
-            return self.delegate.battery_data
-        return None
     
     def disconnect(self):
         """Disconnect from device"""
@@ -353,17 +448,21 @@ class DualBMSService:
         
         try:
             if reader.connect():
-                if reader.read_data():
-                    battery_data = reader.get_battery_data()
-                    if battery_data:
-                        self.battery_data[track] = battery_data
-                        print(f"✓ {track} data updated: {battery_data.voltage:.2f}V, {battery_data.soc:.1f}%")
-                    else:
-                        print(f"⚠ {track} no data received")
-                        self.battery_data[track].connection_status = "no_data"
+                data = reader.get_all_data()
+                if data:
+                    self.battery_data[track] = BatteryData(track=track, 
+                                                           voltage=data['voltage'], 
+                                                           current=data['current'], 
+                                                           remaining_capacity=data['remaining_capacity'], 
+                                                           total_capacity=data['nominal_capacity'], 
+                                                           soc=data['soc'], 
+                                                           cell_voltages=data['cell_voltages'], 
+                                                           last_update=data['timestamp'], 
+                                                           connection_status="connected")
+                    print(f"✓ {track} data updated: {data['voltage']:.2f}V, {data['soc']:.1f}%")
                 else:
-                    print(f"✗ {track} data read failed")
-                    self.battery_data[track].connection_status = "read_failed"
+                    print(f"⚠ {track} no data received")
+                    self.battery_data[track].connection_status = "no_data"
             else:
                 print(f"✗ {track} connection failed")
                 self.battery_data[track].connection_status = "connection_failed"
