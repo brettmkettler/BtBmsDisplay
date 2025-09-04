@@ -214,16 +214,6 @@ class JBDBMSReader:
                 print(f"✗ Connection timeout for {self.track}")
                 return False
             
-            # If first attempt fails, try once more
-            if peripheral is None:
-                print(f"2nd try connect to {self.track}")
-                time.sleep(2)
-                peripheral = self.connect_with_timeout(10)
-                
-                if peripheral is None:
-                    print(f"✗ Connection timeout for {self.track} (2nd attempt)")
-                    return False
-            
             self.peripheral = peripheral
             print(f"✓ Connected to {self.track}: {self.mac_address}")
             
