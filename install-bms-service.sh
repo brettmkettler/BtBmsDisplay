@@ -30,15 +30,20 @@ Wants=network.target bluetooth.target
 [Service]
 Type=simple
 User=$USER
+Group=bluetooth
 WorkingDirectory=$INSTALL_DIR
 Environment=PYTHONPATH=$INSTALL_DIR
 Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=${SERVICE_NAME}
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
 
 [Install]
 WantedBy=multi-user.target
