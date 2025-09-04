@@ -27,9 +27,8 @@ echo "Creating systemd service file..."
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
 [Unit]
 Description=J5 Console Kiosk Display
-After=graphical-session.target j5-ui.service
+After=multi-user.target j5-ui.service
 Wants=j5-ui.service
-Requires=graphical-session.target
 
 [Service]
 Type=simple
@@ -44,7 +43,7 @@ StandardOutput=journal
 StandardError=journal
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=multi-user.target
 EOF
 
 # Reload systemd and enable service
