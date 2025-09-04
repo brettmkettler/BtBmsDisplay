@@ -29,9 +29,8 @@ Wants=network.target bluetooth.target
 
 [Service]
 Type=simple
-User=$USER
-Group=$USER
-SupplementaryGroups=bluetooth dialout
+User=root
+Group=root
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$INSTALL_DIR/run-bms-service.sh
 Restart=always
