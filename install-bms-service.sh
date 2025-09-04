@@ -13,11 +13,20 @@ SERVICE_NAME="j5-bms-api"
 
 echo "Installation directory: $INSTALL_DIR"
 
+# Add user to bluetooth group
+echo "Adding user to bluetooth group..."
+sudo usermod -a -G bluetooth $USER
+
 # Check if dual_bms_service.py exists
 if [ ! -f "dual_bms_service.py" ]; then
     echo "Error: dual_bms_service.py not found. Make sure you're in the correct directory."
     exit 1
 fi
+
+# Fix file permissions
+echo "Setting file permissions..."
+chmod +r dual_bms_service.py
+chmod +x dual_bms_service.py
 
 # Create systemd service file
 echo "Creating systemd service file..."
@@ -31,12 +40,12 @@ Wants=network.target bluetooth.target
 Type=simple
 User=$USER
 Group=bluetooth
-WorkingDirectory=$INSTALL_DIR
-Environment=PYTHONPATH=$INSTALL_DIR
-Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
+WorkingDirectory=${INSTALL_DIR}
+Environment=PYTHONPATH=${INSTALL_DIR}
+Environment=PATH=${INSTALL_DIR}/venv/bin:\$PATH
 Environment=PYTHONUNBUFFERED=1
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
+ExecStart=${INSTALL_DIR}/venv/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
