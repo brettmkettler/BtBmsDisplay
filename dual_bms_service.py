@@ -15,7 +15,7 @@ from flask import Flask, jsonify
 from dataclasses import dataclass, asdict
 
 try:
-    from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException
+    from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException, ADDR_TYPE_PUBLIC
 except ImportError:
     print("ERROR: bluepy3 not installed. Run: pip install bluepy3")
     sys.exit(1)
@@ -169,17 +169,64 @@ class JBDBMSReader:
         try:
             print(f"Connecting to {self.track} track: {self.mac_address}")
             
-            # Step 1: Connect
-            self.peripheral = Peripheral(self.mac_address, addrType="public")
+            # Step 1: Connect to peripheral with proper address type
+            self.peripheral = Peripheral(self.mac_address, addrType=ADDR_TYPE_PUBLIC)
             
-            # Step 2: Get service and characteristic using correct UUIDs
-            self.service = self.peripheral.getServiceByUUID(self.service_uuid)
-            characteristics = self.service.getCharacteristics(self.char_uuid)
+            # Step 2: Wait a moment for connection to stabilize
+            time.sleep(0.5)
             
-            if not characteristics:
-                raise Exception(f"Characteristic {self.char_uuid} not found")
-                
-            self.characteristic = characteristics[0]
+            # Step 3: Get services and find the correct one
+            services = self.peripheral.getServices()
+            print(f"Available services for {self.track}: {[str(s.uuid) for s in services]}")
+            
+            # Try to find service by UUID (try both short and long form)
+            service_found = False
+            for service in services:
+                service_uuid_str = str(service.uuid).lower()
+                if "ffe0" in service_uuid_str:
+                    self.service = service
+                    service_found = True
+                    print(f"✓ Found service: {service.uuid}")
+                    break
+            
+            if not service_found:
+                # Try direct UUID lookup
+                try:
+                    self.service = self.peripheral.getServiceByUUID(self.service_uuid)
+                    service_found = True
+                    print(f"✓ Found service by direct lookup: {self.service_uuid}")
+                except:
+                    pass
+            
+            if not service_found:
+                raise Exception(f"Service with UUID containing 'ffe0' not found. Available: {[str(s.uuid) for s in services]}")
+            
+            # Step 4: Get characteristics
+            characteristics = self.service.getCharacteristics()
+            print(f"Available characteristics for {self.track}: {[str(c.uuid) for c in characteristics]}")
+            
+            # Find the correct characteristic
+            char_found = False
+            for char in characteristics:
+                char_uuid_str = str(char.uuid).lower()
+                if "ffe1" in char_uuid_str:
+                    self.characteristic = char
+                    char_found = True
+                    print(f"✓ Found characteristic: {char.uuid}")
+                    break
+            
+            if not char_found:
+                # Try direct characteristic lookup
+                try:
+                    self.characteristic = self.service.getCharacteristics(self.char_uuid)[0]
+                    char_found = True
+                    print(f"✓ Found characteristic by direct lookup: {self.char_uuid}")
+                except:
+                    pass
+            
+            if not char_found:
+                raise Exception(f"Characteristic with UUID containing 'ffe1' not found. Available: {[str(c.uuid) for c in characteristics]}")
+            
             self.connected = True
             print(f"✓ {self.track} connected successfully")
             return True
@@ -188,7 +235,7 @@ class JBDBMSReader:
             print(f"✗ {self.track} connection failed: {e}")
             self.connected = False
             return False
-    
+
     def _send_cmd(self, cmd):
         """Send command and read response"""
         if not self.connected or not self.characteristic:
@@ -247,10 +294,18 @@ class JBDBMSReader:
             return {
                 'voltage': total_v,
                 'current': current,
+                'power': total_v * current,
+                'soc': soc,
                 'remaining_capacity': res_cap,
                 'nominal_capacity': nom_cap,
-                'soc': soc,
-                'power': total_v * current
+                'cell_voltages': [],
+                'cell_percentages': [],
+                'min_cell_voltage': 0,
+                'max_cell_voltage': 0,
+                'avg_cell_voltage': 0,
+                'cell_balance': 0,
+                'num_cells': 0,
+                'timestamp': datetime.now().isoformat()
             }
             
         except Exception as e:
