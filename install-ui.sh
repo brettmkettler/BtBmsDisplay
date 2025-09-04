@@ -35,11 +35,11 @@ After=network.target
 Wants=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR
 Environment=NODE_ENV=production
-ExecStart=/bin/bash -c 'npm run preview & sleep 5 && ./start_kiosk.sh'
+ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=10
 StandardOutput=syslog
