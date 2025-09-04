@@ -29,7 +29,8 @@ Wants=network.target bluetooth.target
 
 [Service]
 Type=simple
-User=$USER
+User=root
+Group=root
 WorkingDirectory=$INSTALL_DIR
 Environment=PYTHONPATH=$INSTALL_DIR
 Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH

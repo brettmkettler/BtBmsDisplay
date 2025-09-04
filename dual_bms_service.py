@@ -344,10 +344,10 @@ class DualBMSService:
             self.thread.join(timeout=10)
         logger.info("BMS service stopped")
     
-    def run_api_server(self, host='0.0.0.0', port=5000):
+    def run_api_server(self, host='0.0.0.0', port=8000):
         """Run the Flask API server"""
         logger.info(f"Starting API server on {host}:{port}")
-        self.app.run(host=host, port=port, debug=True)
+        self.app.run(host=host, port=port, debug=False)
 
 if __name__ == "__main__":
     # Configuration
