@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Dual BMS Service - Alternates between left and right track BMS units
-Provides REST API for UI to consume battery data with timestamps.
+Provides REST API for UI to consume battery data with timestamps
 """
 
 import sys
@@ -9,7 +9,6 @@ import time
 import json
 import logging
 import threading
-import signal
 from datetime import datetime
 from typing import Optional, Dict
 from flask import Flask, jsonify
@@ -31,12 +30,6 @@ import struct
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-class TimeoutError(Exception):
-    pass
-
-def timeout_handler(signum, frame):
-    raise TimeoutError("Connection timeout")
 
 @dataclass
 class BatteryData:
@@ -173,47 +166,33 @@ class JBDBMSReader:
         self.connected = False
 
     def connect(self):
-        """Connect using exact pattern from working script with timeout"""
+        """Connect using exact pattern from working script"""
         try:
             print(f"Attempting to connect to {self.track}: {self.mac_address}")
             
-            # Set up timeout signal (10 seconds)
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)
-            
+            # First connection attempt
             try:
-                # First connection attempt
-                try:
-                    self.peripheral = Peripheral(self.mac_address, addrType="public")
-                except BTLEException:
-                    print(f"2nd try connect to {self.track}")
-                    time.sleep(2)
-                    self.peripheral = Peripheral(self.mac_address, addrType="public")
-                
-                # Cancel timeout
-                signal.alarm(0)
-                
-                # Set up delegate for notifications
-                self.delegate = JBDBMSDelegate(self.track)
-                self.peripheral.setDelegate(self.delegate)
-                
-                self.connected = True
-                return True
-                
-            except TimeoutError:
-                print(f"✗ Connection timeout for {self.track}")
-                signal.alarm(0)
-                self.connected = False
-                return False
-            except BTLEException as e:
-                print(f"✗ Cannot connect to {self.track}: {e}")
-                signal.alarm(0)
-                self.connected = False
-                return False
+                self.peripheral = Peripheral(self.mac_address, addrType="public")
+            except BTLEException:
+                print(f"2nd try connect to {self.track}")
+                time.sleep(2)
+                self.peripheral = Peripheral(self.mac_address, addrType="public")
             
+            print(f"✓ Connected to {self.track}: {self.mac_address}")
+            
+            # Setup delegate for notifications
+            self.delegate = JBDBMSDelegate(self.track)
+            self.peripheral.setDelegate(self.delegate)
+            
+            self.connected = True
+            return True
+            
+        except BTLEException as e:
+            print(f"✗ Cannot connect to {self.track}: {e}")
+            self.connected = False
+            return False
         except Exception as e:
             print(f"✗ Connection error for {self.track}: {e}")
-            signal.alarm(0)
             self.connected = False
             return False
 
