@@ -143,7 +143,7 @@ class JBDBMSReader:
         self.connected = False
     
     def connect(self) -> bool:
-        """Connect to BMS"""
+        """Connect to BMS with JBD-specific handling"""
         try:
             logger.info(f"Connecting to {self.track} track: {self.mac_address}")
             
@@ -151,19 +151,35 @@ class JBDBMSReader:
             self.delegate = JBDBMSDelegate(self.track)
             self.peripheral.setDelegate(self.delegate)
             
-            # Enable notifications
+            # JBD BMS specific: Wait for initial connection to stabilize
+            time.sleep(1)
+            
+            # Enable notifications - try multiple handles
+            notification_enabled = False
+            for handle in [22, 23, 24, 25]:
+                try:
+                    self.peripheral.writeCharacteristic(handle, b'\x01\x00', False)
+                    logger.info(f"✓ {self.track} notifications enabled on handle {handle}")
+                    notification_enabled = True
+                    break
+                except Exception as e:
+                    logger.debug(f"  {self.track} handle {handle} failed: {e}")
+                    continue
+            
+            if not notification_enabled:
+                logger.warning(f"⚠ {self.track} could not enable notifications on any handle")
+            
+            # Wait for handshake notification and stabilization
+            time.sleep(2)
+            
+            # Check for any initial notifications (like '00' handshake)
             try:
-                self.peripheral.writeCharacteristic(22, b'\x01\x00', False)
-            except Exception:
-                for handle in [23, 24, 25]:
-                    try:
-                        self.peripheral.writeCharacteristic(handle, b'\x01\x00', False)
-                        break
-                    except:
-                        continue
+                self.peripheral.waitForNotifications(1.0)
+            except:
+                pass
             
             self.connected = True
-            logger.info(f"✓ {self.track} connected successfully")
+            logger.info(f"✓ {self.track} connected and stabilized")
             return True
             
         except Exception as e:
