@@ -10,8 +10,10 @@ echo "=== Installing BMS API Service ==="
 # Get current directory
 INSTALL_DIR=$(pwd)
 SERVICE_NAME="j5-bms-api"
+VENV_PATH="/home/seanfuchs/Desktop/venv"
 
 echo "Installation directory: $INSTALL_DIR"
+echo "Virtual environment: $VENV_PATH"
 
 # Add user to bluetooth group
 echo "Adding user to bluetooth group..."
@@ -42,10 +44,10 @@ User=$USER
 Group=bluetooth
 WorkingDirectory=${INSTALL_DIR}
 Environment=PYTHONPATH=${INSTALL_DIR}
-Environment=PATH=${INSTALL_DIR}/venv/bin:\$PATH
+Environment=PATH=${VENV_PATH}/bin:\$PATH
 Environment=PYTHONUNBUFFERED=1
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=${INSTALL_DIR}/venv/bin/python dual_bms_service.py
+ExecStart=${VENV_PATH}/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
