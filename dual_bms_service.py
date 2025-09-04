@@ -61,7 +61,12 @@ class JBDBMSDelegate(DefaultDelegate):
         
     def handleNotification(self, cHandle, data):
         hex_data = binascii.hexlify(data).decode('utf-8')
-        logger.debug(f"BMS {self.track} RX: Handle {cHandle} = {hex_data}")
+        self.responses.append({
+            'handle': cHandle,
+            'data': hex_data,
+            'timestamp': datetime.now().isoformat()
+        })
+        print(f"BMS {self.track} RX: Handle {cHandle} = {hex_data}")
         
         # Skip handshake
         if hex_data == '00':
@@ -69,34 +74,40 @@ class JBDBMSDelegate(DefaultDelegate):
             
         # Handle JBD split messages
         if hex_data.startswith('dd') and len(hex_data) < 40:
+            # First part of split message
             self.partial_message = data
+            print(f"BMS {self.track} PARTIAL: {hex_data}")
             return
             
         # Combine with partial if exists
         if self.partial_message:
             combined_data = self.partial_message + data
-            self.process_bms_data(combined_data)
+            combined_hex = binascii.hexlify(combined_data).decode('utf-8')
+            print(f"BMS {self.track} COMBINED: {combined_hex}")
+            self.process_bms_data(combined_data, combined_hex)
             self.partial_message = b''
         else:
-            self.process_bms_data(data)
+            self.process_bms_data(data, hex_data)
     
-    def process_bms_data(self, data):
-        """Process BMS data"""
+    def process_bms_data(self, data, hex_string):
+        """Process BMS data using parse_bms_data.py logic"""
         try:
-            hex_string = binascii.hexlify(data).decode('utf-8')
             if hex_string.find('dd03') != -1:
+                # Pack info
                 self.parse_pack_info(data)
             elif hex_string.find('dd04') != -1:
+                # Cell voltages
                 self.parse_cell_voltages(data)
         except Exception as e:
             logger.error(f"Error processing BMS data for {self.track}: {e}")
     
     def parse_pack_info(self, data):
-        """Parse pack info response (0x03)"""
+        """Parse pack info response (0x03) - from parse_bms_data.py"""
         if len(data) < 20:
             return
             
         try:
+            # Skip header (4 bytes), parse pack data
             i = 4
             volts, amps, remain, capacity, cycles, mdate, balance1, balance2 = struct.unpack_from('>HhHHHHHH', data, i)
             
@@ -109,31 +120,33 @@ class JBDBMSDelegate(DefaultDelegate):
             self.battery_data.last_update = datetime.now().isoformat()
             self.battery_data.connection_status = "connected"
             
-            logger.info(f"✓ {self.track} Pack: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A, {self.battery_data.soc:.1f}%")
+            print(f"✓ {self.track} Pack: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A, {self.battery_data.soc:.1f}%")
             
         except Exception as e:
             logger.error(f"Error parsing pack info for {self.track}: {e}")
     
     def parse_cell_voltages(self, data):
-        """Parse cell voltage response (0x04)"""
+        """Parse cell voltage response (0x04) - from parse_bms_data.py"""
         if len(data) < 20:
             return
             
         try:
+            # Skip header (4 bytes), parse cell voltages
             i = 4
             cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8 = struct.unpack_from('>HHHHHHHH', data, i)
             
             cells = [cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8]
+            # Convert to volts and filter out zero cells
             self.battery_data.cell_voltages = [c / 1000.0 for c in cells if c > 0]
             self.battery_data.last_update = datetime.now().isoformat()
             
-            logger.info(f"✓ {self.track} Cells: {[f'{c:.3f}V' for c in self.battery_data.cell_voltages]}")
+            print(f"✓ {self.track} Cells: {[f'{c:.3f}V' for c in self.battery_data.cell_voltages]}")
             
         except Exception as e:
             logger.error(f"Error parsing cell voltages for {self.track}: {e}")
 
 class JBDBMSReader:
-    """JBD BMS Reader"""
+    """JBD BMS Reader using working connection logic"""
     
     def __init__(self, mac_address: str, track: str):
         self.mac_address = mac_address
@@ -143,80 +156,84 @@ class JBDBMSReader:
         self.connected = False
     
     def connect(self) -> bool:
-        """Connect to BMS with JBD-specific handling"""
+        """Connect using working logic from original script"""
         try:
-            logger.info(f"Connecting to {self.track} track: {self.mac_address}")
+            print(f"Connecting to {self.track} track: {self.mac_address}")
             
+            # Step 1: Connect
             self.peripheral = Peripheral(self.mac_address, addrType="public")
+            
+            # Step 2: Set delegate
             self.delegate = JBDBMSDelegate(self.track)
             self.peripheral.setDelegate(self.delegate)
             
-            # JBD BMS specific: Wait for initial connection to stabilize
-            time.sleep(1)
-            
-            # Enable notifications - try multiple handles
-            notification_enabled = False
-            for handle in [22, 23, 24, 25]:
-                try:
-                    self.peripheral.writeCharacteristic(handle, b'\x01\x00', False)
-                    logger.info(f"✓ {self.track} notifications enabled on handle {handle}")
-                    notification_enabled = True
-                    break
-                except Exception as e:
-                    logger.debug(f"  {self.track} handle {handle} failed: {e}")
-                    continue
-            
-            if not notification_enabled:
-                logger.warning(f"⚠ {self.track} could not enable notifications on any handle")
-            
-            # Wait for handshake notification and stabilization
-            time.sleep(2)
-            
-            # Check for any initial notifications (like '00' handshake)
+            # Step 3: Enable notifications
             try:
-                self.peripheral.waitForNotifications(1.0)
-            except:
-                pass
+                self.peripheral.writeCharacteristic(22, b'\x01\x00', False)
+                print(f"✓ {self.track} notifications enabled on handle 22")
+            except Exception as e:
+                # Try other handles
+                for handle in [23, 24, 25]:
+                    try:
+                        self.peripheral.writeCharacteristic(handle, b'\x01\x00', False)
+                        print(f"✓ {self.track} notifications enabled on handle {handle}")
+                        break
+                    except:
+                        continue
             
             self.connected = True
-            logger.info(f"✓ {self.track} connected and stabilized")
+            print(f"✓ {self.track} connected successfully")
             return True
             
         except Exception as e:
-            logger.error(f"✗ {self.track} connection failed: {e}")
+            print(f"✗ {self.track} connection failed: {e}")
             return False
     
     def read_data(self) -> bool:
-        """Read BMS data"""
+        """Read BMS data using sequential command approach"""
         if not self.connected or not self.peripheral:
             return False
         
+        # JBD BMS commands from working script
         commands = [
-            {'name': 'Basic Info (0x03)', 'data': b'\xdd\xa5\x03\x00\xff\xfd\x77'},
-            {'name': 'Cell Voltages (0x04)', 'data': b'\xdd\xa5\x04\x00\xff\xfc\x77'}
+            {
+                'name': 'Basic Info (0x03)',
+                'data': b'\xdd\xa5\x03\x00\xff\xfd\x77'
+            },
+            {
+                'name': 'Cell Voltages (0x04)', 
+                'data': b'\xdd\xa5\x04\x00\xff\xfc\x77'
+            }
         ]
         
         for i, cmd in enumerate(commands):
+            print(f"Sending {cmd['name']} to {self.track}...")
+            
             try:
+                # Send command
                 self.peripheral.writeCharacteristic(21, cmd['data'], False)
                 
+                # Wait for response
                 start_time = time.time()
                 while time.time() - start_time < 3:
                     if self.peripheral.waitForNotifications(0.5):
+                        print(f"✓ {self.track} response received")
                         break
                 else:
-                    logger.warning(f"⚠ {self.track} no response to {cmd['name']}")
+                    print(f"⚠ {self.track} no response to {cmd['name']}")
                 
-                time.sleep(0.5)
+                time.sleep(0.5)  # Brief pause between commands
                 
             except BTLEException as e:
                 if "disconnected" in str(e).lower() and i == 0:
+                    # First command disconnected, reconnect for second
+                    print(f"⚠ {self.track} disconnected on first command, reconnecting...")
                     if self.reconnect():
                         continue
                     else:
                         return False
                 else:
-                    logger.error(f"✗ {self.track} error: {e}")
+                    print(f"✗ {self.track} error: {e}")
                     return False
         
         return True
@@ -227,10 +244,10 @@ class JBDBMSReader:
             self.peripheral = Peripheral(self.mac_address, addrType="public")
             self.peripheral.setDelegate(self.delegate)
             self.peripheral.writeCharacteristic(22, b'\x01\x00', False)
-            logger.info(f"✓ {self.track} reconnected")
+            print(f"✓ {self.track} reconnected")
             return True
         except Exception as e:
-            logger.error(f"✗ {self.track} reconnection failed: {e}")
+            print(f"✗ {self.track} reconnection failed: {e}")
             self.connected = False
             return False
     
@@ -245,6 +262,7 @@ class JBDBMSReader:
         if self.peripheral:
             try:
                 self.peripheral.disconnect()
+                print(f"✓ {self.track} disconnected")
             except:
                 pass
         self.connected = False
@@ -326,19 +344,19 @@ class DualBMSService:
                     battery_data = reader.get_battery_data()
                     if battery_data:
                         self.battery_data[track] = battery_data
-                        logger.info(f"✓ {track} data updated: {battery_data.voltage:.2f}V, {battery_data.soc:.1f}%")
+                        print(f"✓ {track} data updated: {battery_data.voltage:.2f}V, {battery_data.soc:.1f}%")
                     else:
-                        logger.warning(f"⚠ {track} no data received")
+                        print(f"⚠ {track} no data received")
                         self.battery_data[track].connection_status = "no_data"
                 else:
-                    logger.error(f"✗ {track} data read failed")
+                    print(f"✗ {track} data read failed")
                     self.battery_data[track].connection_status = "read_failed"
             else:
-                logger.error(f"✗ {track} connection failed")
+                print(f"✗ {track} connection failed")
                 self.battery_data[track].connection_status = "connection_failed"
                 
         except Exception as e:
-            logger.error(f"✗ {track} polling error: {e}")
+            print(f"✗ {track} polling error: {e}")
             self.battery_data[track].connection_status = "error"
         finally:
             reader.disconnect()
