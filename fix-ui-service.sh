@@ -1,3 +1,19 @@
+# Create the systemd service file
+sudo tee /etc/systemd/system/j5-ui.service > /dev/null << 'EOF'
+[Unit]
+Description=J5 Console UI Service
+After=network.target
 
-ExecStart=$NPM_PATH run start -- --host 0.0.0.0 --port 3000
+[Service]
+Type=forking
+User=root
+WorkingDirectory=/Users/brettkettler/REPO/j5_console/BtBmsDisplay
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/bin/bash -c "npm run start & sleep 5 && ./start_kiosk.sh"
+Restart=always
+RestartSec=10
 
+[Install]
+WantedBy=multi-user.target
+EOF
