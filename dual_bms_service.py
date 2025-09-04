@@ -38,7 +38,7 @@ class BatteryData:
     voltage: float = 0.0
     current: float = 0.0
     remaining_capacity: float = 0.0
-    total_capacity: float = 0.0
+    full_capacity: float = 0.0
     soc: float = 0.0
     cycles: int = 0
     cell_voltages: list = None
@@ -76,6 +76,13 @@ class JBDBMSDelegate(DefaultDelegate):
     def parse_basic_info(self, data):
         """Parse basic pack info (0x03 response)"""
         try:
+            print(f"Basic info data length: {len(data)} bytes")
+            
+            # Check minimum buffer size (need 20 bytes: 4 header + 16 data)
+            if len(data) < 20:
+                print(f"Buffer too small for basic info: {len(data)} bytes, need 20")
+                return
+                
             i = 4  # Skip header bytes 0-3
             volts, amps, remain, capacity, cycles, mdate, balance1, balance2 = struct.unpack_from('>HhHHHHHH', data, i)
             
@@ -83,29 +90,56 @@ class JBDBMSDelegate(DefaultDelegate):
             self.battery_data.voltage = volts / 100.0
             self.battery_data.current = amps / 100.0
             self.battery_data.remaining_capacity = remain / 100.0
-            self.battery_data.total_capacity = capacity / 100.0
+            self.battery_data.full_capacity = capacity / 100.0
+            self.battery_data.cycles = cycles
             self.battery_data.last_update = datetime.now().isoformat()
             
-            print(f"✓ {self.track} Basic: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A")
+            print(f"✓ {self.track} Pack: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A, {self.battery_data.remaining_capacity:.1f}Ah")
             
         except Exception as e:
             logger.error(f"Error parsing basic info for {self.track}: {e}")
+            print(f"Raw data: {binascii.hexlify(data).decode('utf-8')}")
     
     def parse_cell_voltages(self, data):
         """Parse cell voltages (0x04 response)"""
         try:
+            print(f"Cell voltage data length: {len(data)} bytes")
+            
+            # Check minimum buffer size
+            if len(data) < 8:  # Need at least header + some data
+                print(f"Buffer too small: {len(data)} bytes")
+                return
+            
             i = 4  # Skip header bytes 0-3
-            cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8 = struct.unpack_from('>HHHHHHHH', data, i)
+            available_bytes = len(data) - i
+            
+            # Calculate how many cells we can read (2 bytes per cell)
+            max_cells = available_bytes // 2
+            print(f"Can read {max_cells} cells from {available_bytes} available bytes")
+            
+            if max_cells == 0:
+                print("No cell data available")
+                return
+            
+            # Read available cells (up to 8)
+            cells = []
+            for cell_idx in range(min(max_cells, 8)):
+                if i + 1 < len(data):
+                    cell_value = struct.unpack_from('>H', data, i)[0]
+                    cells.append(cell_value)
+                    i += 2
+                else:
+                    break
             
             # Convert to volts and filter out zero cells
-            cells = [cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8]
             self.battery_data.cell_voltages = [c / 1000.0 for c in cells if c > 0]
             self.battery_data.last_update = datetime.now().isoformat()
             
-            print(f"✓ {self.track} Cells: {[f'{c:.3f}V' for c in self.battery_data.cell_voltages]}")
+            print(f"✓ {self.track} Cells ({len(cells)}): {[f'{c:.3f}V' for c in self.battery_data.cell_voltages]}")
             
         except Exception as e:
             logger.error(f"Error parsing cell voltages for {self.track}: {e}")
+            print(f"Raw data: {binascii.hexlify(data).decode('utf-8')}")
     
     def parse_extended_info(self, data):
         """Parse extended info (protection, SOC, etc.)"""
