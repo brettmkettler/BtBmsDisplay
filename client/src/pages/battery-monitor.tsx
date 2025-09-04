@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useWebSocket } from "@/hooks/use-websocket";
+import { useBmsApi } from "@/hooks/use-bms-api";
 import { BatteryListItem } from "@/components/battery-list-item";
 import { LoadingScreen } from "@/components/loading-screen";
 import { ConnectionStatus } from "@/components/connection-status";
@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Bluetooth } from "lucide-react";
 
 export default function BatteryMonitor() {
-  const { isConnected, batteryData, connectionStatus, lastUpdate } = useWebSocket();
+  const { isConnected, batteryData, connectionStatus, lastUpdate } = useBmsApi();
   const [selectedTrack, setSelectedTrack] = useState<'left' | 'right'>('left');
 
   // Show loading screen if not both BMS devices are connected
