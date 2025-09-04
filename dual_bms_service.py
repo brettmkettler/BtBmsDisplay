@@ -347,7 +347,7 @@ class DualBMSService:
     def run_api_server(self, host='0.0.0.0', port=5000):
         """Run the Flask API server"""
         logger.info(f"Starting API server on {host}:{port}")
-        self.app.run(host=host, port=port, debug=False)
+        self.app.run(host=host, port=port, debug=True)
 
 if __name__ == "__main__":
     # Configuration
