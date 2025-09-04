@@ -361,7 +361,7 @@ if __name__ == "__main__":
         service.start_service()
         
         # Run API server (blocking)
-        service.run_api_server(host='0.0.0.0', port=5000)
+        service.run_api_server(host='0.0.0.0', port=5050)
         
     except KeyboardInterrupt:
         logger.info("Shutting down...")
