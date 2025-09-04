@@ -36,9 +36,8 @@ Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
 ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
 Restart=always
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=${SERVICE_NAME}
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
