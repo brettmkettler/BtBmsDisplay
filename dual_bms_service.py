@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Optional, Dict
 from flask import Flask, jsonify
 from dataclasses import dataclass, asdict
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 try:
     from bluepy3.btle import Peripheral, DefaultDelegate, BTLEException
@@ -185,48 +186,44 @@ class JBDBMSReader:
         self.delegate = None
         self.connected = False
 
+    def connect_with_timeout(self, timeout_seconds=10):
+        """Attempt connection in a separate thread with timeout"""
+        def _connect():
+            try:
+                peripheral = Peripheral(self.mac_address, addrType="public")
+                return peripheral
+            except Exception as e:
+                raise e
+        
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_connect)
+            try:
+                return future.result(timeout=timeout_seconds)
+            except FutureTimeoutError:
+                return None
+
     def connect(self):
-        """Connect using exact pattern from working script with thread-safe timeout"""
+        """Connect using threaded timeout to prevent hanging"""
         try:
             print(f"Attempting to connect to {self.track}: {self.mac_address}")
             
-            # Create timeout tracker
-            timeout = ConnectionTimeout(10)  # 10 second timeout
-            timeout.start()
+            # Try connection with timeout
+            peripheral = self.connect_with_timeout(10)
             
-            # First connection attempt with timeout checking
-            peripheral = None
-            connected = False
-            
-            for attempt in range(2):  # Try twice like original
-                if timeout.is_expired():
-                    print(f"✗ Connection timeout for {self.track}")
-                    return False
-                    
-                try:
-                    if attempt > 0:
-                        print(f"2nd try connect to {self.track}")
-                        time.sleep(2)
-                        
-                    # Check timeout before attempting connection
-                    if timeout.is_expired():
-                        print(f"✗ Connection timeout for {self.track}")
-                        return False
-                        
-                    peripheral = Peripheral(self.mac_address, addrType="public")
-                    connected = True
-                    break
-                    
-                except BTLEException as e:
-                    if attempt == 1:  # Last attempt
-                        print(f"✗ Cannot connect to {self.track}: {e}")
-                        return False
-                    continue
-            
-            if not connected or timeout.is_expired():
-                print(f"✗ Connection failed or timeout for {self.track}")
+            if peripheral is None:
+                print(f"✗ Connection timeout for {self.track}")
                 return False
+            
+            # If first attempt fails, try once more
+            if peripheral is None:
+                print(f"2nd try connect to {self.track}")
+                time.sleep(2)
+                peripheral = self.connect_with_timeout(10)
                 
+                if peripheral is None:
+                    print(f"✗ Connection timeout for {self.track} (2nd attempt)")
+                    return False
+            
             self.peripheral = peripheral
             print(f"✓ Connected to {self.track}: {self.mac_address}")
             
@@ -237,6 +234,10 @@ class JBDBMSReader:
             self.connected = True
             return True
             
+        except BTLEException as e:
+            print(f"✗ Cannot connect to {self.track}: {e}")
+            self.connected = False
+            return False
         except Exception as e:
             print(f"✗ Connection error for {self.track}: {e}")
             self.connected = False
