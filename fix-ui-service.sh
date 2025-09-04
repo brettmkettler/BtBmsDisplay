@@ -10,7 +10,7 @@ User=root
 WorkingDirectory=/Users/brettkettler/REPO/j5_console/BtBmsDisplay
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/bin/bash -c "npm run start & sleep 5 && ./start_kiosk.sh"
+ExecStart=/bin/bash -c "cd /Users/brettkettler/REPO/j5_console/BtBmsDisplay && /usr/bin/npm run start & sleep 5 && ./start_kiosk.sh"
 Restart=always
 RestartSec=10
 
