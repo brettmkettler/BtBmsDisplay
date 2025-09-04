@@ -33,12 +33,7 @@ User=$USER
 Group=$USER
 SupplementaryGroups=bluetooth dialout
 WorkingDirectory=$INSTALL_DIR
-Environment=PYTHONPATH=$INSTALL_DIR
-Environment=PATH=/home/seanfuchs/Desktop/venv/bin:\$PATH
-Environment=HOME=/home/seanfuchs
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-ExecStart=/home/seanfuchs/Desktop/venv/bin/python dual_bms_service.py
+ExecStart=$INSTALL_DIR/run-bms-service.sh
 Restart=always
 RestartSec=10
 StandardOutput=journal
