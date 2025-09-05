@@ -12,7 +12,7 @@ export default function BatteryMonitor() {
 
   // Show loading screen if not both BMS devices are connected
   const bothConnected = connectionStatus.left && connectionStatus.right;
-  const showLoadingScreen = !bothConnected;
+  const showLoadingScreen = false;
 
   // Filter batteries by selected track
   const filteredBatteries = batteryData.filter(battery => battery.track === selectedTrack);
