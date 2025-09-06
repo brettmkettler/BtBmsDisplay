@@ -1,13 +1,18 @@
 [Unit]
 Description=Chromium Kiosk Mode Service
-After=network.target
+After=network.target graphical-session.target
+Wants=graphical-session.target
 
 [Service]
-ExecStart=/home/seanfuchs/Desktop/j5_console/BtBmsDisplay/start_kiosk.sh
+Type=simple
+ExecStart=/Users/brettkettler/REPO/j5_console/BtBmsDisplay/start_kiosk.sh
 Restart=always
-User=seanfuchs
-Environment=DISPLAY=:0  # Adjust if your display is different
-Environment=XAUTHORITY=/home/seanfuchs/.Xauthority
+RestartSec=5
+User=pi
+Group=pi
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=HOME=/home/pi
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical-session.target
