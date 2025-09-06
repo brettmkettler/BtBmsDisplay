@@ -8,11 +8,11 @@ Type=simple
 ExecStart=/Users/brettkettler/REPO/j5_console/BtBmsDisplay/start_kiosk.sh
 Restart=always
 RestartSec=5
-User=pi
-Group=pi
+User=seanfuchs
+Group=seanfuchs
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/pi/.Xauthority
-Environment=HOME=/home/pi
+Environment=XAUTHORITY=/home/seanfuchs/.Xauthority
+Environment=HOME=/home/seanfuchs
 
 [Install]
 WantedBy=graphical-session.target

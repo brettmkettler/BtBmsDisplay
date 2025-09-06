@@ -2,7 +2,7 @@
 
 # Set up X11 display
 export DISPLAY=:0
-export XAUTHORITY=/home/pi/.Xauthority
+export XAUTHORITY=/home/seanfuchs/.Xauthority
 
 # Wait for X server to be ready
 sleep 2
