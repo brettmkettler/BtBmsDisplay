@@ -1,2 +1,2 @@
 #!/bin/bash
-chromium-browser --kiosk --no-sandbox --disable-web-security --disable-features=VizDisplayCompositor --user-data-dir --enable-touch-events http://localhost:3000
+chromium-browser --kiosk --no-sandbox --disable-web-security --disable-features=VizDisplayCompositor --user-data-dir --enable-touch-events --force-device-scale-factor=2.1 http://localhost:3000

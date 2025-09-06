@@ -19,6 +19,9 @@ if [ ! -f "dual_bms_service.py" ]; then
     exit 1
 fi
 
+# Make run-bms-service.sh executable
+chmod +x run-bms-service.sh
+
 # Create systemd service file
 echo "Creating systemd service file..."
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
