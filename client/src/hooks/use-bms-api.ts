@@ -47,6 +47,7 @@ export function useBmsApi() {
       }
       
       const data: BmsApiResponse = await response.json();
+      console.log('BMS API Response:', data);
       
       // Update connection status
       setConnectionStatus({
@@ -59,6 +60,7 @@ export function useBmsApi() {
       
       // Process left track cells
       if (data.left.cell_voltages && data.left.cell_voltages.length > 0) {
+        console.log('Processing left track cells:', data.left.cell_voltages);
         data.left.cell_voltages.forEach((voltage, index) => {
           // Filter out invalid voltages (like the 65.458V reading)
           if (voltage > 2.0 && voltage < 5.0) {
@@ -75,6 +77,7 @@ export function useBmsApi() {
       
       // Process right track cells
       if (data.right.cell_voltages && data.right.cell_voltages.length > 0) {
+        console.log('Processing right track cells:', data.right.cell_voltages);
         data.right.cell_voltages.forEach((voltage, index) => {
           // Filter out invalid voltages (like the 65.458V reading)
           if (voltage > 2.0 && voltage < 5.0) {
@@ -89,6 +92,7 @@ export function useBmsApi() {
         });
       }
       
+      console.log('Processed battery data:', processedData);
       setBatteryData(processedData);
       setLastUpdate(new Date());
       setIsConnected(true);
