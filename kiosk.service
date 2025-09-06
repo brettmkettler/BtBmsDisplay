@@ -5,7 +5,7 @@ Wants=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/Users/brettkettler/REPO/j5_console/BtBmsDisplay/start_kiosk.sh
+ExecStart=/home/seanfuchs/Desktop/j5_console/BtBmsDisplay/start_kiosk.sh
 Restart=always
 RestartSec=5
 User=seanfuchs
