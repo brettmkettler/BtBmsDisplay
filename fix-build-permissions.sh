@@ -26,9 +26,22 @@ npx update-browserslist-db@latest
 echo "Rebuilding project..."
 npm run build
 
-# Restart the UI service
-echo "Restarting j5-ui service..."
-sudo systemctl start j5-ui
+# Check if build was successful
+if [ $? -eq 0 ]; then
+    echo "Build successful!"
+    
+    # Restart the UI service
+    echo "Restarting j5-ui service..."
+    sudo systemctl start j5-ui
+    
+    # Wait a moment and check status
+    sleep 3
+    echo "Checking service status..."
+    sudo systemctl status j5-ui --no-pager -l
+else
+    echo "Build failed! Check the error messages above."
+    exit 1
+fi
 
 echo "Build permissions fixed and project rebuilt!"
-echo "Check service status with: sudo systemctl status j5-ui"
+echo "If service is still failing, check logs with: sudo journalctl -u j5-ui -f"
