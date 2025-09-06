@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { type BatteryUpdate } from '@shared/schema';
 
-interface ConnectionStatus {
-  left: boolean;
-  right: boolean;
-}
-
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [batteryData, setBatteryData] = useState<BatteryUpdate['batteries']>([]);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ left: false, right: false });
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
@@ -30,12 +23,6 @@ export function useWebSocket() {
           const data = JSON.parse(event.data) as BatteryUpdate;
           if (data.type === 'battery_update') {
             setBatteryData(data.batteries);
-            setLastUpdate(new Date());
-            
-            // Update BMS connection status if provided
-            if (data.connectionStatus) {
-              setConnectionStatus(data.connectionStatus);
-            }
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -77,8 +64,6 @@ export function useWebSocket() {
   return {
     isConnected,
     batteryData,
-    connectionStatus,
-    lastUpdate,
     reconnect: connect,
   };
 }
