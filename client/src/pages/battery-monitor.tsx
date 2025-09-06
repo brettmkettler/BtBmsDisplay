@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useBmsApi } from "@/hooks/use-bms-api";
 import { BatteryListItem } from "@/components/battery-list-item";
-import { LoadingScreen } from "@/components/loading-screen";
-import { ConnectionStatus } from "@/components/connection-status";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Bluetooth } from "lucide-react";
 
 export default function BatteryMonitor() {
-  const { isConnected, batteryData } = useBmsApi();
+  const { batteryData } = useBmsApi();
   const [selectedTrack, setSelectedTrack] = useState<'left' | 'right'>('left');
 
   // Filter batteries by selected track
@@ -15,13 +11,6 @@ export default function BatteryMonitor() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-display-black text-white font-mono-display">
-      {/* Connection Status Indicator (minimal) */}
-      {!isConnected && (
-        <div className="bg-battery-red text-white text-center p-2 text-sm">
-          Connection Lost - Attempting to Reconnect...
-        </div>
-      )}
-      
       {/* Track Selection */}
       <div className="flex justify-center p-4">
         <div className="flex bg-gray-800 rounded-lg p-1">
@@ -65,8 +54,8 @@ export default function BatteryMonitor() {
               ))
           ) : (
             <div className="text-center text-battery-yellow py-8">
-              <div className="text-xl">Initializing Battery Monitor...</div>
-              <div className="text-sm mt-2">Connecting to BMS...</div>
+              <div className="text-xl">No Battery Data Available</div>
+              <div className="text-sm mt-2">Waiting for BMS data...</div>
             </div>
           )}
         </div>
