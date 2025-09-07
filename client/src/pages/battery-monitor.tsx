@@ -129,7 +129,7 @@ export default function BatteryMonitor() {
           onClick={handleActivateClick}
           className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-r border-gray-600"
           style={{ 
-            fontSize: '3rem',
+            fontSize: '1rem',
             fontWeight: 'bold',
             color: '#16a34a',
             textAlign: 'center'
@@ -149,7 +149,7 @@ export default function BatteryMonitor() {
           onClick={handleSystemClick}
           className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-l border-gray-600"
           style={{ 
-            fontSize: '3rem',
+            fontSize: '1rem',
             fontWeight: 'bold',
             color: 'hsl(0, 100%, 50%)',
             textAlign: 'center'
