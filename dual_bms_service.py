@@ -262,6 +262,81 @@ class DualBMSService:
     def setup_routes(self):
         """Setup Flask API routes"""
         
+        @self.app.route('/api/batteries', methods=['GET'])
+        def get_batteries():
+            """Get battery data in format expected by UI - left/right tracks with 4 cells each"""
+            batteries = []
+            
+            # Generate left track batteries (positions 1-4)
+            left_data = self.battery_data['left']
+            for i in range(4):
+                # If we have cell voltage data, use it, otherwise use pack voltage / 4
+                if left_data.cell_voltages and len(left_data.cell_voltages) > i:
+                    cell_voltage = left_data.cell_voltages[i]
+                else:
+                    cell_voltage = left_data.voltage / 4 if left_data.voltage > 0 else 3.2
+                
+                batteries.append({
+                    'batteryNumber': i + 1,
+                    'voltage': round(cell_voltage, 2),
+                    'amperage': round(abs(left_data.current), 1),
+                    'chargeLevel': round(left_data.soc, 0),
+                    'temperature': 25,  # Default temperature
+                    'status': 'normal' if left_data.connection_status == 'connected' else 'warning',
+                    'track': 'left',
+                    'trackPosition': i + 1
+                })
+            
+            # Generate right track batteries (positions 1-4)
+            right_data = self.battery_data['right']
+            for i in range(4):
+                # If we have cell voltage data, use it, otherwise use pack voltage / 4
+                if right_data.cell_voltages and len(right_data.cell_voltages) > i:
+                    cell_voltage = right_data.cell_voltages[i]
+                else:
+                    cell_voltage = right_data.voltage / 4 if right_data.voltage > 0 else 3.2
+                
+                batteries.append({
+                    'batteryNumber': i + 5,  # 5-8 for right track
+                    'voltage': round(cell_voltage, 2),
+                    'amperage': round(abs(right_data.current), 1),
+                    'chargeLevel': round(right_data.soc, 0),
+                    'temperature': 25,  # Default temperature
+                    'status': 'normal' if right_data.connection_status == 'connected' else 'warning',
+                    'track': 'right',
+                    'trackPosition': i + 1
+                })
+            
+            return jsonify(batteries)
+        
+        @self.app.route('/api/bms/status', methods=['GET'])
+        def get_bms_status():
+            """Get BMS connection status in format expected by UI"""
+            return jsonify({
+                'connected': any(data.connection_status == 'connected' for data in self.battery_data.values()),
+                'tracks': {
+                    'left': self.battery_data['left'].connection_status == 'connected',
+                    'right': self.battery_data['right'].connection_status == 'connected'
+                },
+                'devices': {
+                    self.left_mac: {
+                        'track': 'left',
+                        'connected': self.battery_data['left'].connection_status == 'connected',
+                        'lastData': self.battery_data['left'].last_update
+                    },
+                    self.right_mac: {
+                        'track': 'right', 
+                        'connected': self.battery_data['right'].connection_status == 'connected',
+                        'lastData': self.battery_data['right'].last_update
+                    }
+                },
+                'config': {
+                    'leftTrackMac': self.left_mac,
+                    'rightTrackMac': self.right_mac,
+                    'pollInterval': self.poll_interval * 1000  # Convert to ms
+                }
+            })
+        
         @self.app.route('/api/battery/status', methods=['GET'])
         def get_battery_status():
             """Get current battery status for both tracks"""

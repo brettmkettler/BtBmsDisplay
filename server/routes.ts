@@ -3,51 +3,44 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { batteryUpdateSchema, type BatteryUpdate } from "@shared/schema";
-import { bmsIntegration } from "./bms-integration";
 import * as os from "os";
 import { execSync } from "child_process";
+import fetch from "node-fetch";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get latest battery data from BMS
+  // Get latest battery data from Python BMS API
   app.get("/api/batteries", async (req, res) => {
     try {
-      const batteries = await bmsIntegration.readBatteryData();
+      const response = await fetch("http://localhost:8000/api/batteries");
+      if (!response.ok) {
+        throw new Error(`BMS API responded with status: ${response.status}`);
+      }
+      const batteries = await response.json();
       res.json(batteries);
     } catch (error) {
-      console.error("Error fetching battery data:", error);
+      console.error("Error fetching battery data from Python BMS API:", error);
       res.status(500).json({ error: "Failed to fetch battery data" });
     }
   });
 
-  // Get BMS connection status
+  // Get BMS connection status from Python BMS API
   app.get("/api/bms/status", async (req, res) => {
     try {
-      const connectionStatus = bmsIntegration.getConnectionStatus();
-      const deviceStatus = bmsIntegration.getDeviceStatus();
-      const isConnected = bmsIntegration.isConnectedToBMS();
-      
-      res.json({
-        connected: isConnected,
-        tracks: connectionStatus,
-        devices: deviceStatus,
-        config: bmsIntegration.getConfig()
-      });
+      const response = await fetch("http://localhost:8000/api/bms/status");
+      if (!response.ok) {
+        throw new Error(`BMS API responded with status: ${response.status}`);
+      }
+      const status = await response.json();
+      res.json(status);
     } catch (error) {
-      console.error("Error fetching BMS status:", error);
+      console.error("Error fetching BMS status from Python BMS API:", error);
       res.status(500).json({ error: "Failed to fetch BMS status" });
     }
   });
 
-  // Toggle mock mode
+  // Toggle mock mode - not applicable for Python API, return error
   app.post("/api/bms/mock/:enabled", async (req, res) => {
-    try {
-      const enabled = req.params.enabled === 'true';
-      bmsIntegration.setMockMode(enabled);
-      res.json({ success: true, mockMode: enabled });
-    } catch (error) {
-      console.error("Error toggling mock mode:", error);
-      res.status(500).json({ error: "Failed to toggle mock mode" });
-    }
+    res.status(501).json({ error: "Mock mode not supported with Python BMS API" });
   });
 
   // Update battery data (legacy endpoint for external systems)
@@ -64,7 +57,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.saveBatteryData(batteryData);
 
       // Broadcast to all connected WebSocket clients
-      const connectionStatus = bmsIntegration.getConnectionStatus();
+      const response = await fetch("http://localhost:8000/api/bms/status");
+      if (!response.ok) {
+        throw new Error(`BMS API responded with status: ${response.status}`);
+      }
+      const connectionStatus = await response.json();
       const update: BatteryUpdate = {
         type: "battery_update",
         batteries: batteryData.map(b => ({
@@ -152,7 +149,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get BMS connection status for system info
-      const bmsStatus = bmsIntegration.getConnectionStatus();
+      const response = await fetch("http://localhost:8000/api/bms/status");
+      if (!response.ok) {
+        throw new Error(`BMS API responded with status: ${response.status}`);
+      }
+      const bmsStatus = await response.json();
 
       const systemInfo = {
         unitId: "J5-CONSOLE-001",
@@ -189,8 +190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Send initial battery data and connection status
     const sendInitialData = async () => {
       try {
-        const batteries = await bmsIntegration.readBatteryData();
-        const connectionStatus = bmsIntegration.getConnectionStatus();
+        const response = await fetch("http://localhost:8000/api/batteries");
+        if (!response.ok) {
+          throw new Error(`BMS API responded with status: ${response.status}`);
+        }
+        const batteries = await response.json();
+        const connectionStatusResponse = await fetch("http://localhost:8000/api/bms/status");
+        if (!connectionStatusResponse.ok) {
+          throw new Error(`BMS API responded with status: ${connectionStatusResponse.status}`);
+        }
+        const connectionStatus = await connectionStatusResponse.json();
         
         const update: BatteryUpdate = {
           type: "battery_update",
@@ -229,8 +238,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Real-time data broadcasting from BMS
   const broadcastBatteryData = async () => {
     try {
-      const batteries = await bmsIntegration.readBatteryData();
-      const connectionStatus = bmsIntegration.getConnectionStatus();
+      const response = await fetch("http://localhost:8000/api/batteries");
+      if (!response.ok) {
+        throw new Error(`BMS API responded with status: ${response.status}`);
+      }
+      const batteries = await response.json();
+      const connectionStatusResponse = await fetch("http://localhost:8000/api/bms/status");
+      if (!connectionStatusResponse.ok) {
+        throw new Error(`BMS API responded with status: ${connectionStatusResponse.status}`);
+      }
+      const connectionStatus = await connectionStatusResponse.json();
       
       const update: BatteryUpdate = {
         type: "battery_update",
