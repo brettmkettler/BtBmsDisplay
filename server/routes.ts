@@ -89,6 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update battery data" });
     }
   });
+  
 
   // Screen control APIs
   app.post("/api/screen/off", (req, res) => {
