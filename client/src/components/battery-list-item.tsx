@@ -35,9 +35,9 @@ export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel 
       
       {/* AMPS Section */}
       <div className="flex flex-col items-center mx-8">
-        <div className="text-battery-yellow text-2xl font-bold">AMPS</div>
+        <div className="text-battery-red text-2xl font-bold">AMPS</div>
         <div 
-          className="text-battery-green text-3xl font-bold"
+          className="text-battery-red text-3xl font-bold"
           data-testid={`battery-amps-${batteryNumber}`}
         >
           {amperage.toFixed(1)}
@@ -46,9 +46,9 @@ export function BatteryListItem({ batteryNumber, voltage, amperage, chargeLevel 
       
       {/* VOLTS Section */}
       <div className="flex flex-col items-center mx-8">
-        <div className="text-battery-yellow text-2xl font-bold">VOLTS</div>
+        <div className="text-battery-red text-2xl font-bold">VOLTS</div>
         <div 
-          className="text-battery-green text-3xl font-bold"
+          className="text-battery-red text-3xl font-bold"
           data-testid={`battery-volts-${batteryNumber}`}
         >
           {voltage.toFixed(2)}

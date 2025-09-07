@@ -45,7 +45,7 @@ export default function BatteryMonitor() {
   });
 
   return (
-    <div className="min-h-screen bg-display-black text-white p-6">
+    <div className="min-h-screen bg-display-black text-battery-red p-6">
       {/* Loading Screen Overlay */}
       {showLoadingScreen && (
         <LoadingScreen
@@ -59,8 +59,8 @@ export default function BatteryMonitor() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold text-battery-red">BATTERY MONITOR</h1>
         <div className="flex items-center gap-2">
-          <Bluetooth className={`w-6 h-6 ${isConnected ? 'text-green-500' : 'text-red-500'}`} />
-          <span className={`text-sm ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
+          <Bluetooth className={`w-6 h-6 ${isConnected ? 'text-battery-red' : 'text-battery-red opacity-50'}`} />
+          <span className={`text-sm ${isConnected ? 'text-battery-red' : 'text-battery-red opacity-50'}`}>
             {isConnected ? 'Server Connected' : 'Server Disconnected'}
           </span>
         </div>
@@ -84,9 +84,9 @@ export default function BatteryMonitor() {
 
       {/* Server Connection Alert */}
       {!isConnected && (
-        <Alert className="mb-6 border-red-500/50 bg-red-500/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-red-400">
+        <Alert className="mb-6 border-battery-red bg-display-black">
+          <AlertTriangle className="h-4 w-4 text-battery-red" />
+          <AlertDescription className="text-battery-red">
             Connection lost to server. Attempting to reconnect...
           </AlertDescription>
         </Alert>
@@ -94,13 +94,13 @@ export default function BatteryMonitor() {
 
       {/* Track Selection */}
       <div className="flex justify-center mb-8">
-        <div className="flex bg-gray-800 rounded-lg p-1">
+        <div className="flex bg-display-black border border-battery-red rounded-lg p-1">
           <button
             onClick={() => setSelectedTrack('left')}
             className={`px-6 py-3 rounded-md font-semibold transition-colors ${
               selectedTrack === 'left'
-                ? 'bg-battery-red text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-battery-red text-display-black'
+                : 'text-battery-red hover:bg-battery-red hover:bg-opacity-20'
             }`}
           >
             LEFT TRACK
@@ -109,8 +109,8 @@ export default function BatteryMonitor() {
             onClick={() => setSelectedTrack('right')}
             className={`px-6 py-3 rounded-md font-semibold transition-colors ${
               selectedTrack === 'right'
-                ? 'bg-battery-red text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-battery-red text-display-black'
+                : 'text-battery-red hover:bg-battery-red hover:bg-opacity-20'
             }`}
           >
             RIGHT TRACK
@@ -131,7 +131,7 @@ export default function BatteryMonitor() {
         ))}
         
         {/* Debug info */}
-        <div className="text-xs text-gray-500 mt-4">
+        <div className="text-xs text-battery-red opacity-50 mt-4">
           Debug: Showing {filteredBatteries.length} batteries for {selectedTrack} track
           {batteryData.length === 0 && " (using fallback data)"}
         </div>

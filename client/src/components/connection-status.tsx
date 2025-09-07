@@ -13,19 +13,19 @@ export function ConnectionStatus({ track, isConnected, isWebSocketConnected, las
   const macAddress = track === 'left' ? 'A4:C1:38:7C:2D:F0' : 'E0:9F:2A:E4:94:1D';
   
   const getStatusColor = () => {
-    if (!isWebSocketConnected) return 'text-red-500';
-    if (isConnected) return 'text-green-500';
-    return 'text-yellow-500';
+    if (!isWebSocketConnected) return 'text-battery-red opacity-50';
+    if (isConnected) return 'text-battery-red';
+    return 'text-battery-red opacity-75';
   };
 
   const getStatusIcon = () => {
     if (!isWebSocketConnected) {
-      return <AlertTriangle className="w-5 h-5 text-red-500" />;
+      return <AlertTriangle className="w-5 h-5 text-battery-red opacity-50" />;
     }
     if (isConnected) {
-      return <BluetoothConnected className="w-5 h-5 text-green-500" />;
+      return <BluetoothConnected className="w-5 h-5 text-battery-red" />;
     }
-    return <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />;
+    return <Loader2 className="w-5 h-5 text-battery-red opacity-75 animate-spin" />;
   };
 
   const getStatusText = () => {
@@ -46,9 +46,9 @@ export function ConnectionStatus({ track, isConnected, isWebSocketConnected, las
   };
 
   return (
-    <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 space-y-3">
+    <div className="bg-display-black border border-battery-red rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">{trackName} BMS</h3>
+        <h3 className="text-lg font-semibold text-battery-red">{trackName} BMS</h3>
         <div className="flex items-center gap-2">
           {getStatusIcon()}
           <span className={`text-sm font-medium ${getStatusColor()}`}>
@@ -57,32 +57,32 @@ export function ConnectionStatus({ track, isConnected, isWebSocketConnected, las
         </div>
       </div>
       
-      <div className="space-y-2 text-sm text-gray-300">
+      <div className="space-y-2 text-sm text-battery-red opacity-75">
         <div className="flex justify-between">
           <span>MAC Address:</span>
           <span className="font-mono text-xs">{macAddress}</span>
         </div>
         <div className="flex justify-between">
           <span>Last Update:</span>
-          <span className={lastUpdate && getLastUpdateText() === 'Live' ? 'text-green-400' : 'text-gray-400'}>
+          <span className={lastUpdate && getLastUpdateText() === 'Live' ? 'text-battery-red' : 'text-battery-red opacity-50'}>
             {getLastUpdateText()}
           </span>
         </div>
       </div>
 
       {!isWebSocketConnected && (
-        <Alert className="border-red-500/50 bg-red-500/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-red-400">
+        <Alert className="border-battery-red bg-display-black">
+          <AlertTriangle className="h-4 w-4 text-battery-red" />
+          <AlertDescription className="text-battery-red">
             Server connection lost. Check if the BMS service is running.
           </AlertDescription>
         </Alert>
       )}
 
       {isWebSocketConnected && !isConnected && (
-        <Alert className="border-yellow-500/50 bg-yellow-500/10">
-          <Bluetooth className="h-4 w-4" />
-          <AlertDescription className="text-yellow-400">
+        <Alert className="border-battery-red bg-display-black">
+          <Bluetooth className="h-4 w-4 text-battery-red" />
+          <AlertDescription className="text-battery-red opacity-75">
             Scanning for BMS device. Ensure the BMS is powered and within range.
           </AlertDescription>
         </Alert>
