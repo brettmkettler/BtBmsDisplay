@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System information API
-  app.get("/api/system", (req, res) => {
+  app.get("/api/system", async (req, res) => {
     try {
       const totalMem = os.totalmem();
       const freeMem = os.freemem();
