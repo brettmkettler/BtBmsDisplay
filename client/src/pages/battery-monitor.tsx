@@ -127,11 +127,11 @@ export default function BatteryMonitor() {
         {/* ACTIVATE Button - Left Half */}
         <button
           onClick={handleActivateClick}
-          className="flex-1 bg-green-600 hover:bg-green-700 transition-colors flex items-center justify-center border-r border-display-black"
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-r border-gray-600"
           style={{ 
             fontSize: '3rem',
             fontWeight: 'bold',
-            color: 'white',
+            color: '#16a34a',
             textAlign: 'center'
           }}
         >
@@ -147,11 +147,11 @@ export default function BatteryMonitor() {
         {/* SYSTEM Button - Right Half */}
         <button
           onClick={handleSystemClick}
-          className="flex-1 bg-battery-red hover:bg-red-700 transition-colors flex items-center justify-center border-l border-display-black"
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-l border-gray-600"
           style={{ 
             fontSize: '3rem',
             fontWeight: 'bold',
-            color: 'white',
+            color: 'hsl(0, 100%, 50%)',
             textAlign: 'center'
           }}
         >
