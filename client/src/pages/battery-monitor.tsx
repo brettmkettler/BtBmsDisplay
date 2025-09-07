@@ -14,8 +14,35 @@ export default function BatteryMonitor() {
   const bothConnected = connectionStatus.left && connectionStatus.right;
   const showLoadingScreen = false;
 
+  // Create fallback data if no data is available
+  const fallbackData = [
+    // Left track batteries
+    { batteryNumber: 1, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'left', trackPosition: 1 },
+    { batteryNumber: 2, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'left', trackPosition: 2 },
+    { batteryNumber: 3, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'left', trackPosition: 3 },
+    { batteryNumber: 4, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'left', trackPosition: 4 },
+    // Right track batteries
+    { batteryNumber: 5, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'right', trackPosition: 1 },
+    { batteryNumber: 6, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'right', trackPosition: 2 },
+    { batteryNumber: 7, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'right', trackPosition: 3 },
+    { batteryNumber: 8, voltage: 3.33, amperage: 0.0, chargeLevel: 0, track: 'right', trackPosition: 4 },
+  ];
+
+  // Use WebSocket data if available, otherwise use fallback
+  const displayData = batteryData.length > 0 ? batteryData : fallbackData;
+
   // Filter batteries by selected track
-  const filteredBatteries = batteryData.filter(battery => battery.track === selectedTrack);
+  const filteredBatteries = displayData.filter(battery => battery.track === selectedTrack);
+
+  // Debug logging
+  console.log('Battery Monitor Debug:', {
+    batteryDataLength: batteryData.length,
+    displayDataLength: displayData.length,
+    filteredBatteriesLength: filteredBatteries.length,
+    selectedTrack,
+    isConnected,
+    connectionStatus
+  });
 
   return (
     <div className="min-h-screen bg-display-black text-white p-6">
@@ -93,26 +120,21 @@ export default function BatteryMonitor() {
 
       {/* Battery List */}
       <div className="space-y-4">
-        {filteredBatteries.length > 0 ? (
-          filteredBatteries.map((battery) => (
-            <BatteryListItem
-              key={`${battery.track}-${battery.trackPosition}`}
-              batteryNumber={battery.trackPosition}
-              voltage={battery.voltage}
-              amperage={battery.amperage}
-              chargeLevel={battery.chargeLevel}
-            />
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">
-              {connectionStatus[selectedTrack] 
-                ? 'No battery data available' 
-                : `Waiting for ${selectedTrack.toUpperCase()} TRACK BMS connection...`
-              }
-            </div>
-          </div>
-        )}
+        {filteredBatteries.map((battery) => (
+          <BatteryListItem
+            key={`${battery.track}-${battery.trackPosition}`}
+            batteryNumber={battery.trackPosition}
+            voltage={battery.voltage}
+            amperage={battery.amperage}
+            chargeLevel={battery.chargeLevel}
+          />
+        ))}
+        
+        {/* Debug info */}
+        <div className="text-xs text-gray-500 mt-4">
+          Debug: Showing {filteredBatteries.length} batteries for {selectedTrack} track
+          {batteryData.length === 0 && " (using fallback data)"}
+        </div>
       </div>
     </div>
   );
