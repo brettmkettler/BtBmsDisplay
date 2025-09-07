@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#WORKING VERSION
+
 # Set up X11 display and authorization
 export DISPLAY=:0
 
