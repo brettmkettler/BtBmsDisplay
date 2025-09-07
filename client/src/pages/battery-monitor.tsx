@@ -66,32 +66,6 @@ export default function BatteryMonitor() {
         </div>
       </div>
 
-      {/* Connection Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <ConnectionStatus
-          track="left"
-          isConnected={connectionStatus.left}
-          isWebSocketConnected={isConnected}
-          lastUpdate={lastUpdate}
-        />
-        <ConnectionStatus
-          track="right"
-          isConnected={connectionStatus.right}
-          isWebSocketConnected={isConnected}
-          lastUpdate={lastUpdate}
-        />
-      </div>
-
-      {/* Server Connection Alert */}
-      {!isConnected && (
-        <Alert className="mb-6 border-battery-red bg-display-black">
-          <AlertTriangle className="h-4 w-4 text-battery-red" />
-          <AlertDescription className="text-battery-red">
-            Connection lost to server. Attempting to reconnect...
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Track Selection */}
       <div className="flex justify-center mb-8">
         <div className="flex bg-display-black border border-battery-red rounded-lg p-1">
