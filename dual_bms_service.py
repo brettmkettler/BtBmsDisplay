@@ -94,6 +94,11 @@ class JBDBMSDelegate(DefaultDelegate):
             self.battery_data.cycles = cycles
             self.battery_data.last_update = datetime.now().isoformat()
             
+            # Calculate SOC as fallback if not set by extended info
+            if self.battery_data.soc == 0.0 and self.battery_data.full_capacity > 0:
+                self.battery_data.soc = (self.battery_data.remaining_capacity / self.battery_data.full_capacity) * 100
+                print(f"✓ {self.track} SOC calculated: {self.battery_data.soc:.1f}%")
+            
             print(f"✓ {self.track} Pack: {self.battery_data.voltage:.2f}V, {self.battery_data.current:.2f}A, {self.battery_data.remaining_capacity:.1f}Ah")
             
         except Exception as e:
@@ -307,13 +312,18 @@ class DualBMSService:
                     'trackPosition': i + 1
                 })
             
+            logger.debug(f"Batteries API called - returning {len(batteries)} batteries")
+            logger.debug(f"Left: {left_data.voltage:.2f}V, {left_data.soc:.1f}%, status: {left_data.connection_status}")
+            logger.debug(f"Right: {right_data.voltage:.2f}V, {right_data.soc:.1f}%, status: {right_data.connection_status}")
             return jsonify(batteries)
         
         @self.app.route('/api/bms/status', methods=['GET'])
         def get_bms_status():
             """Get BMS connection status in format expected by UI"""
-            return jsonify({
+            status = {
                 'connected': any(data.connection_status == 'connected' for data in self.battery_data.values()),
+                'left': self.battery_data['left'].connection_status == 'connected',
+                'right': self.battery_data['right'].connection_status == 'connected',
                 'tracks': {
                     'left': self.battery_data['left'].connection_status == 'connected',
                     'right': self.battery_data['right'].connection_status == 'connected'
@@ -329,13 +339,10 @@ class DualBMSService:
                         'connected': self.battery_data['right'].connection_status == 'connected',
                         'lastData': self.battery_data['right'].last_update
                     }
-                },
-                'config': {
-                    'leftTrackMac': self.left_mac,
-                    'rightTrackMac': self.right_mac,
-                    'pollInterval': self.poll_interval * 1000  # Convert to ms
                 }
-            })
+            }
+            logger.debug(f"BMS Status API called - Left: {status['left']}, Right: {status['right']}")
+            return jsonify(status)
         
         @self.app.route('/api/battery/status', methods=['GET'])
         def get_battery_status():
