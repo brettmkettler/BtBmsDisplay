@@ -46,6 +46,7 @@ chromium-browser \
     --disable-infobars \
     --disable-session-crashed-bubble \
     --disable-translate \
+    --force-device-scale-factor=2.1 \
     --user-data-dir="$CHROME_DATA_DIR" \
     --enable-touch-events \
     http://localhost:3000
