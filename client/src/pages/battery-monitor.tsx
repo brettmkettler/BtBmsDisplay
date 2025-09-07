@@ -1,44 +1,119 @@
-import { BatteryListItem } from "@/components/battery-list-item";
+import { useState } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { BatteryListItem } from "@/components/battery-list-item";
+import { LoadingScreen } from "@/components/loading-screen";
+import { ConnectionStatus } from "@/components/connection-status";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Bluetooth } from "lucide-react";
 
 export default function BatteryMonitor() {
-  const { isConnected, batteryData } = useWebSocket();
+  const { isConnected, batteryData, connectionStatus, lastUpdate } = useWebSocket();
+  const [selectedTrack, setSelectedTrack] = useState<'left' | 'right'>('left');
+
+  // Show loading screen if not both BMS devices are connected
+  const bothConnected = connectionStatus.left && connectionStatus.right;
+  const showLoadingScreen = !bothConnected;
+
+  // Filter batteries by selected track
+  const filteredBatteries = batteryData.filter(battery => battery.track === selectedTrack);
 
   return (
-    <div className="w-full h-screen flex flex-col bg-display-black text-white font-mono-display">
-      {/* Connection Status Indicator (minimal) */}
-      {!isConnected && (
-        <div className="bg-battery-red text-white text-center p-2 text-sm">
-          Connection Lost - Attempting to Reconnect...
-        </div>
+    <div className="min-h-screen bg-display-black text-white p-6">
+      {/* Loading Screen Overlay */}
+      {showLoadingScreen && (
+        <LoadingScreen
+          connectionStatus={connectionStatus}
+          isWebSocketConnected={isConnected}
+          lastUpdate={lastUpdate}
+        />
       )}
-      
-      {/* Battery List - Takes up 4/5 of screen height */}
-      <div className="p-4 scrollable-container">
-        <div className="battery-list-container space-y-4" data-testid="battery-container">
-          {batteryData.length > 0 ? (
-            batteryData
-              .sort((a, b) => a.batteryNumber - b.batteryNumber)
-              .map((battery) => (
-                <BatteryListItem
-                  key={battery.batteryNumber}
-                  batteryNumber={battery.batteryNumber}
-                  voltage={battery.voltage}
-                  amperage={battery.amperage}
-                  chargeLevel={battery.chargeLevel}
-                />
-              ))
-          ) : (
-            <div className="text-center text-battery-yellow py-8">
-              <div className="text-xl">Initializing Battery Monitor...</div>
-              <div className="text-sm mt-2">Connecting to BMS...</div>
-            </div>
-          )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold text-battery-red">BATTERY MONITOR</h1>
+        <div className="flex items-center gap-2">
+          <Bluetooth className={`w-6 h-6 ${isConnected ? 'text-green-500' : 'text-red-500'}`} />
+          <span className={`text-sm ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
+            {isConnected ? 'Server Connected' : 'Server Disconnected'}
+          </span>
         </div>
       </div>
-      
-      {/* Bottom 1/5 blank space */}
-      <div className="h-[20vh] bg-display-black"></div>
+
+      {/* Connection Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <ConnectionStatus
+          track="left"
+          isConnected={connectionStatus.left}
+          isWebSocketConnected={isConnected}
+          lastUpdate={lastUpdate}
+        />
+        <ConnectionStatus
+          track="right"
+          isConnected={connectionStatus.right}
+          isWebSocketConnected={isConnected}
+          lastUpdate={lastUpdate}
+        />
+      </div>
+
+      {/* Server Connection Alert */}
+      {!isConnected && (
+        <Alert className="mb-6 border-red-500/50 bg-red-500/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="text-red-400">
+            Connection lost to server. Attempting to reconnect...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Track Selection */}
+      <div className="flex justify-center mb-8">
+        <div className="flex bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setSelectedTrack('left')}
+            className={`px-6 py-3 rounded-md font-semibold transition-colors ${
+              selectedTrack === 'left'
+                ? 'bg-battery-red text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            LEFT TRACK
+          </button>
+          <button
+            onClick={() => setSelectedTrack('right')}
+            className={`px-6 py-3 rounded-md font-semibold transition-colors ${
+              selectedTrack === 'right'
+                ? 'bg-battery-red text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            RIGHT TRACK
+          </button>
+        </div>
+      </div>
+
+      {/* Battery List */}
+      <div className="space-y-4">
+        {filteredBatteries.length > 0 ? (
+          filteredBatteries.map((battery) => (
+            <BatteryListItem
+              key={`${battery.track}-${battery.trackPosition}`}
+              batteryNumber={battery.trackPosition}
+              voltage={battery.voltage}
+              amperage={battery.amperage}
+              chargeLevel={battery.chargeLevel}
+            />
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-lg">
+              {connectionStatus[selectedTrack] 
+                ? 'No battery data available' 
+                : `Waiting for ${selectedTrack.toUpperCase()} TRACK BMS connection...`
+              }
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
