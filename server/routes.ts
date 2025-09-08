@@ -11,7 +11,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get latest battery data from Python BMS API
   app.get("/api/batteries", async (req, res) => {
     try {
-      const response = await fetch("http://localhost:8000/api/batteries");
+      const response = await fetch("http://127.0.0.1:8000/api/batteries");
       if (!response.ok) {
         throw new Error(`BMS API responded with status: ${response.status}`);
       }
@@ -26,7 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get BMS connection status from Python BMS API
   app.get("/api/bms/status", async (req, res) => {
     try {
-      const response = await fetch("http://localhost:8000/api/bms/status");
+      const response = await fetch("http://127.0.0.1:8000/api/bms/status");
       if (!response.ok) {
         throw new Error(`BMS API responded with status: ${response.status}`);
       }
@@ -57,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.saveBatteryData(batteryData);
 
       // Broadcast to all connected WebSocket clients
-      const response = await fetch("http://localhost:8000/api/bms/status");
+      const response = await fetch("http://127.0.0.1:8000/api/bms/status");
       if (!response.ok) {
         throw new Error(`BMS API responded with status: ${response.status}`);
       }
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get BMS connection status for system info
-      const response = await fetch("http://localhost:8000/api/bms/status");
+      const response = await fetch("http://127.0.0.1:8000/api/bms/status");
       if (!response.ok) {
         throw new Error(`BMS API responded with status: ${response.status}`);
       }
@@ -191,12 +191,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Send initial battery data and connection status
     const sendInitialData = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/batteries");
+        const response = await fetch("http://127.0.0.1:8000/api/batteries");
         if (!response.ok) {
           throw new Error(`BMS API responded with status: ${response.status}`);
         }
         const batteries = await response.json();
-        const connectionStatusResponse = await fetch("http://localhost:8000/api/bms/status");
+        const connectionStatusResponse = await fetch("http://127.0.0.1:8000/api/bms/status");
         if (!connectionStatusResponse.ok) {
           throw new Error(`BMS API responded with status: ${connectionStatusResponse.status}`);
         }
@@ -239,12 +239,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Real-time data broadcasting from BMS
   const broadcastBatteryData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/batteries");
+      const response = await fetch("http://127.0.0.1:8000/api/batteries");
       if (!response.ok) {
         throw new Error(`BMS API responded with status: ${response.status}`);
       }
       const batteries = await response.json();
-      const connectionStatusResponse = await fetch("http://localhost:8000/api/bms/status");
+      const connectionStatusResponse = await fetch("http://127.0.0.1:8000/api/bms/status");
       if (!connectionStatusResponse.ok) {
         throw new Error(`BMS API responded with status: ${connectionStatusResponse.status}`);
       }
