@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { BatteryListItem } from "@/components/battery-list-item";
 import { LoadingScreen } from "@/components/loading-screen";
@@ -7,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Bluetooth } from "lucide-react";
 
 export default function BatteryMonitor() {
+  const [, setLocation] = useLocation();
   const { isConnected, batteryData, connectionStatus, lastUpdate } = useWebSocket();
   const [selectedTrack, setSelectedTrack] = useState<'left' | 'right'>('left');
 
@@ -49,7 +51,7 @@ export default function BatteryMonitor() {
   };
 
   const handleSystemClick = () => {
-    console.log('SYSTEM button clicked');
+    setLocation('/system');
   };
 
   return (

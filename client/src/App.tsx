@@ -6,12 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScreenOverlay } from "@/components/screen-overlay";
 import { useScreenControl } from "@/hooks/use-screen-control";
 import BatteryMonitor from "@/pages/battery-monitor";
+import SystemMenu from "@/pages/system-menu";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={BatteryMonitor} />
+      <Route path="/system" component={SystemMenu} />
       <Route component={NotFound} />
     </Switch>
   );
