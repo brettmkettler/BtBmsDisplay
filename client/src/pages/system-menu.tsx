@@ -13,7 +13,7 @@ export default function SystemMenu() {
   const handleBatteryDoorAction = async (action: 'open' | 'close') => {
     setActionLoading(action);
     try {
-      const response = await fetch(`http://localhost:5000/api/door/battery?action=${action}`, {
+      const response = await fetch(`http://localhost:5000/door/battery?action=${action}`, {
         method: 'POST'
       });
       
