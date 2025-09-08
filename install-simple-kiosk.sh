@@ -8,8 +8,8 @@ echo "Installing simple kiosk service..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Get the current user
-CURRENT_USER=$(whoami)
-USER_HOME=$(eval echo ~$CURRENT_USER)
+CURRENT_USER=seanfuchs
+USER_HOME=$(eval echo ~seanfuchs)
 
 # Make start_kiosk.sh executable
 chmod +x "$SCRIPT_DIR/start_kiosk.sh"
@@ -23,8 +23,8 @@ Wants=graphical-session.target
 
 [Service]
 Type=simple
-User=$CURRENT_USER
-Group=$CURRENT_USER
+User=seanfuchs
+Group=seanfuchs
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=$USER_HOME/.Xauthority
 ExecStart=$SCRIPT_DIR/start_kiosk.sh
@@ -40,7 +40,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable simple-kiosk.service
 
 echo "Simple kiosk service installed successfully!"
-echo "User: $CURRENT_USER"
+echo "User: seanfuchs"
 echo "Script path: $SCRIPT_DIR/start_kiosk.sh"
 echo "The service will start automatically on boot."
 echo ""

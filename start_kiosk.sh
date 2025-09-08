@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#WORKING VERSION
-
 # Set up X11 display and authorization
 export DISPLAY=:0
 
@@ -13,10 +11,8 @@ fi
 # Allow X11 connections for current user
 xhost +local:$(whoami) 2>/dev/null || true
 
-# Configure D-Bus session properly
-if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
-    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
-fi
+# Disable D-Bus explicitly to avoid connection errors
+export DBUS_SESSION_BUS_ADDRESS=""
 
 # Wait for X server to be ready
 sleep 3
@@ -32,21 +28,22 @@ chmod 755 "$CHROME_DATA_DIR"
 
 # Launch Chrome in kiosk mode with fixed flags for Raspberry Pi
 chromium-browser \
-    --kiosk \
-    --no-sandbox \
-    --disable-dev-shm-usage \
-    --disable-gpu \
-    --disable-software-rasterizer \
-    --disable-background-timer-throttling \
-    --disable-backgrounding-occluded-windows \
-    --disable-renderer-backgrounding \
-    --disable-features=TranslateUI,VizDisplayCompositor \
-    --no-first-run \
-    --disable-default-apps \
-    --disable-infobars \
-    --disable-session-crashed-bubble \
-    --disable-translate \
-    --force-device-scale-factor=2.1 \
-    --user-data-dir="$CHROME_DATA_DIR" \
-    --enable-touch-events \
-    http://localhost:3000
+  --kiosk \
+  --no-sandbox \
+  --disable-dbus \
+  --disable-dev-shm-usage \
+  --disable-gpu \
+  --disable-software-rasterizer \
+  --disable-background-timer-throttling \
+  --disable-backgrounding-occluded-windows \
+  --disable-renderer-backgrounding \
+  --disable-features=TranslateUI,VizDisplayCompositor \
+  --no-first-run \
+  --disable-default-apps \
+  --disable-infobars \
+  --disable-session-crashed-bubble \
+  --disable-translate \
+  --force-device-scale-factor=2.1 \
+  --user-data-dir="$CHROME_DATA_DIR" \
+  --enable-touch-events \
+  http://localhost:3000

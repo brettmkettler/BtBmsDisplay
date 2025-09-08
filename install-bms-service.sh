@@ -20,7 +20,16 @@ if [ ! -f "dual_bms_service.py" ]; then
 fi
 
 # Make run-bms-service.sh executable
+echo "Setting execute permissions on run-bms-service.sh..."
 chmod +x run-bms-service.sh
+
+# Verify the file exists and has correct permissions
+if [ ! -f "run-bms-service.sh" ]; then
+    echo "Error: run-bms-service.sh not found."
+    exit 1
+fi
+
+echo "Permissions set: $(ls -la run-bms-service.sh)"
 
 # Create systemd service file
 echo "Creating systemd service file..."

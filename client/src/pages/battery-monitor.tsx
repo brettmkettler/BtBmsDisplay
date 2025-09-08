@@ -138,7 +138,7 @@ export default function BatteryMonitor() {
           <span style={{ 
             position: 'relative',
             top: '20px',
-            left: '-100px'
+            left: '-90px'
           }}>
             ACTIVATE
           </span>
