@@ -14,7 +14,7 @@ export default function SystemMenu() {
     setActionLoading(action);
     try {
       const response = await fetch(`http://localhost:5000/door/battery?action=${action}`, {
-        method: 'POST'
+        method: 'GET'
       });
       
       if (!response.ok) {
