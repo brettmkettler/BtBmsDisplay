@@ -55,95 +55,92 @@ export default function BatteryMonitor() {
   };
 
   return (
-    <>
-      {showLoadingScreen && <LoadingScreen />}
-      
-      <div className="min-h-screen bg-black text-red-500 flex flex-col">
+    <div className="min-h-screen bg-display-black text-battery-red flex flex-col">
+      {/* Loading Screen Overlay */}
+      {showLoadingScreen && (
+        <LoadingScreen
+          connectionStatus={connectionStatus}
+          isWebSocketConnected={isConnected}
+          lastUpdate={lastUpdate}
+        />
+      )}
+
+      {/* Main Content Area - 4/5 of screen height */}
+      <div className="flex-1 p-6" style={{ height: '80vh' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-red-500/30">
-          <div className="flex items-center space-x-4">
-            <Bluetooth className={`h-6 w-6 ${isConnected ? 'text-red-400' : 'text-red-600'}`} />
-            <span className="text-lg font-semibold text-red-400">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold text-battery-red">BATTERY MONITOR</h1>
+          <div className="flex items-center gap-2">
+            <Bluetooth className={`w-6 h-6 ${isConnected ? 'text-battery-red' : 'text-battery-red opacity-50'}`} />
+            <span className={`text-sm ${isConnected ? 'text-battery-red' : 'text-battery-red opacity-50'}`}>
               {isConnected ? 'Server Connected' : 'Server Disconnected'}
             </span>
-          </div>
-          
-          <h1 className="text-3xl font-bold text-red-500">Battery Monitor</h1>
-          
-          <div className="text-right">
-            <div className="text-sm text-red-400">Last Update</div>
-            <div className="text-xs text-red-500/70">{lastUpdate}</div>
           </div>
         </div>
 
         {/* Track Selection */}
-        <div className="flex justify-center p-4 border-b border-red-500/30">
-          <div className="flex bg-black border border-red-500/50 rounded-lg overflow-hidden">
+        <div className="flex justify-center mb-8">
+          <div className="flex bg-display-black border border-battery-red rounded-lg p-1">
             <button
               onClick={() => setSelectedTrack('left')}
-              className={`px-8 py-3 font-semibold transition-colors ${
+              className={`px-6 py-3 rounded-md font-semibold transition-colors ${
                 selectedTrack === 'left'
-                  ? 'bg-red-500/20 text-red-400 border-r border-red-500/50'
-                  : 'text-red-500/70 hover:text-red-400 hover:bg-red-500/10 border-r border-red-500/30'
+                  ? 'bg-battery-red text-display-black'
+                  : 'text-battery-red hover:bg-battery-red hover:bg-opacity-20'
               }`}
             >
-              Left Track
+              LEFT TRACK
             </button>
             <button
               onClick={() => setSelectedTrack('right')}
-              className={`px-8 py-3 font-semibold transition-colors ${
+              className={`px-6 py-3 rounded-md font-semibold transition-colors ${
                 selectedTrack === 'right'
-                  ? 'bg-red-500/20 text-red-400'
-                  : 'text-red-500/70 hover:text-red-400 hover:bg-red-500/10'
+                  ? 'bg-battery-red text-display-black'
+                  : 'text-battery-red hover:bg-battery-red hover:bg-opacity-20'
               }`}
             >
-              Right Track
+              RIGHT TRACK
             </button>
           </div>
         </div>
 
-        {/* Connection Status Alert */}
-        {!bothConnected && (
-          <div className="p-4">
-            <Alert className="bg-red-500/10 border-red-500/30 text-red-400">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                BMS Connection Status: Left {connectionStatus.left ? '✓' : '✗'} | Right {connectionStatus.right ? '✓' : '✗'}
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-
         {/* Battery List */}
-        <div className="flex-1 p-6">
-          <div className="space-y-4 max-w-4xl mx-auto">
-            {filteredBatteries.map((battery) => (
-              <BatteryListItem key={battery.batteryNumber} battery={battery} />
-            ))}
+        <div className="space-y-4">
+          {filteredBatteries.map((battery) => (
+            <BatteryListItem
+              key={`${battery.track}-${battery.trackPosition}`}
+              batteryNumber={battery.trackPosition}
+              voltage={battery.voltage}
+              amperage={battery.amperage}
+              chargeLevel={battery.chargeLevel}
+            />
+          ))}
+          
+          {/* Debug info */}
+          <div className="text-xs text-battery-red opacity-50 mt-4">
+            Debug: Showing {filteredBatteries.length} batteries for {selectedTrack} track
+            {batteryData.length === 0 && " (using fallback data)"}
           </div>
         </div>
-
-        {/* Debug Info */}
-        {batteryData.length === 0 && (
-          <div className="p-4 text-center">
-            <div className="text-sm text-red-500/50">
-              Using fallback data - WebSocket not receiving battery data
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Bottom Control Panel */}
-      <div className="fixed bottom-0 left-0 right-0 h-20 bg-black border-t border-red-500/30 flex">
+      {/* Bottom Control Section - 1/5 of screen height */}
+      <div className="flex" style={{ height: '20vh' }}>
         {/* ACTIVATE Button - Left Half */}
         <button
           onClick={handleActivateClick}
-          className="flex-1 bg-black hover:bg-red-500/10 transition-colors flex items-center justify-center border-r border-red-500/30"
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-r border-gray-600"
+          style={{ 
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: '#16a34a',
+            textAlign: 'center'
+          }}
         >
-          <span className="text-red-500 font-bold text-xl relative" style={{
+          <span style={{ 
             position: 'relative',
             top: '20px',
-            left: '100px'
+            left: '-90px'
           }}>
             ACTIVATE
           </span>
@@ -152,9 +149,15 @@ export default function BatteryMonitor() {
         {/* SYSTEM Button - Right Half */}
         <button
           onClick={handleSystemClick}
-          className="flex-1 bg-black hover:bg-red-500/10 transition-colors flex items-center justify-center"
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-l border-gray-600"
+          style={{ 
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: 'hsl(0, 100%, 50%)',
+            textAlign: 'center'
+          }}
         >
-          <span className="text-red-500 font-bold text-xl relative" style={{
+          <span style={{ 
             position: 'relative',
             top: '20px',
             left: '100px'
@@ -163,6 +166,6 @@ export default function BatteryMonitor() {
           </span>
         </button>
       </div>
-    </>
+    </div>
   );
 }
