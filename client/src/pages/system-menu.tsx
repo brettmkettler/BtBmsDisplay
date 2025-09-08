@@ -4,7 +4,7 @@ import { ArrowLeft, DoorOpen, DoorClosed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-
+// working
 export default function SystemMenu() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
