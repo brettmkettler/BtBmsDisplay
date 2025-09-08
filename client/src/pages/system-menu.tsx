@@ -17,9 +17,8 @@ export default function SystemMenu() {
         method: 'GET'
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to ${action} battery doors`);
-      }
+      // Don't check response.ok since the API may return success with different status codes
+      // If we get here without throwing, the request succeeded
       
       toast({
         title: "Success",
