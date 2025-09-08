@@ -36,83 +36,137 @@ export default function SystemMenu() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-black text-red-500 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <Button
-          variant="ghost"
-          size="lg"
-          onClick={() => setLocation('/')}
-          className="text-red-500 hover:bg-red-500/10 border border-red-500/30 hover:border-red-500"
-        >
-          <ArrowLeft className="mr-2 h-5 w-5" />
-          Back to Battery Monitor
-        </Button>
-        <h1 className="text-3xl font-bold text-red-500">System Menu</h1>
-        <div className="w-32" /> {/* Spacer for centering */}
-      </div>
+  const handleActivateClick = () => {
+    console.log('ACTIVATE button clicked');
+  };
 
-      {/* System Controls Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        
-        {/* Battery Doors Section */}
-        <div className="col-span-full">
-          <h2 className="text-xl font-semibold mb-4 text-red-400 border-b border-red-500/30 pb-2">Battery Doors</h2>
+  const handleSystemClick = () => {
+    setLocation('/');
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-red-500 flex flex-col">
+      {/* Main Content Area - 4/5 of screen height */}
+      <div className="flex-1 p-6" style={{ height: '80vh' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={() => setLocation('/')}
+            className="text-red-500 hover:bg-red-500/10 border border-red-500/30 hover:border-red-500"
+          >
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            Back to Battery Monitor
+          </Button>
+          <h1 className="text-3xl font-bold text-red-500">System Menu</h1>
+          <div className="w-32" /> {/* Spacer for centering */}
         </div>
 
-        {/* Open Battery Doors */}
-        <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-          <CardContent className="p-6">
-            <Button
-              onClick={() => handleBatteryDoorAction('open')}
-              disabled={actionLoading === 'open'}
-              className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
-            >
-              <DoorOpen className="h-12 w-12 text-red-400" />
-              <div className="text-center">
-                <div className="text-lg font-semibold text-red-500">Open Battery Doors</div>
-                <div className="text-sm text-red-400 mt-1">
-                  {actionLoading === 'open' ? 'Opening...' : 'Click to open all battery doors'}
+        {/* System Controls Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          
+          {/* Battery Doors Section */}
+          <div className="col-span-full">
+            <h2 className="text-xl font-semibold mb-4 text-red-400 border-b border-red-500/30 pb-2">Battery Doors</h2>
+          </div>
+
+          {/* Open Battery Doors */}
+          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6">
+              <Button
+                onClick={() => handleBatteryDoorAction('open')}
+                disabled={actionLoading === 'open'}
+                className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
+              >
+                <DoorOpen className="h-12 w-12 text-red-400" />
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-red-500">Open Battery Doors</div>
+                  <div className="text-sm text-red-400 mt-1">
+                    {actionLoading === 'open' ? 'Opening...' : 'Click to open all battery doors'}
+                  </div>
+                </div>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Close Battery Doors */}
+          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6">
+              <Button
+                onClick={() => handleBatteryDoorAction('close')}
+                disabled={actionLoading === 'close'}
+                className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
+              >
+                <DoorClosed className="h-12 w-12 text-red-400" />
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-red-500">Close Battery Doors</div>
+                  <div className="text-sm text-red-400 mt-1">
+                    {actionLoading === 'close' ? 'Closing...' : 'Click to close all battery doors'}
+                  </div>
+                </div>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Placeholder for future system controls */}
+          <Card className="bg-black border-red-500/30 opacity-50">
+            <CardContent className="p-6">
+              <div className="w-full h-full min-h-[120px] flex flex-col items-center justify-center space-y-3 text-red-500/50">
+                <div className="h-12 w-12 rounded-full border-2 border-red-500/30 flex items-center justify-center">
+                  <span className="text-2xl">+</span>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold">More Controls</div>
+                  <div className="text-sm mt-1">Additional system controls coming soon</div>
                 </div>
               </div>
-            </Button>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-        {/* Close Battery Doors */}
-        <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-          <CardContent className="p-6">
-            <Button
-              onClick={() => handleBatteryDoorAction('close')}
-              disabled={actionLoading === 'close'}
-              className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
-            >
-              <DoorClosed className="h-12 w-12 text-red-400" />
-              <div className="text-center">
-                <div className="text-lg font-semibold text-red-500">Close Battery Doors</div>
-                <div className="text-sm text-red-400 mt-1">
-                  {actionLoading === 'close' ? 'Closing...' : 'Click to close all battery doors'}
-                </div>
-              </div>
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Bottom Control Section - 1/5 of screen height */}
+      <div className="flex" style={{ height: '20vh' }}>
+        {/* ACTIVATE Button - Left Half */}
+        <button
+          onClick={handleActivateClick}
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-r border-gray-600"
+          style={{ 
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: '#16a34a',
+            textAlign: 'center'
+          }}
+        >
+          <span style={{ 
+            position: 'relative',
+            top: '20px',
+            left: '-90px'
+          }}>
+            ACTIVATE
+          </span>
+        </button>
 
-        {/* Placeholder for future system controls */}
-        <Card className="bg-black border-red-500/30 opacity-50">
-          <CardContent className="p-6">
-            <div className="w-full h-full min-h-[120px] flex flex-col items-center justify-center space-y-3 text-red-500/50">
-              <div className="h-12 w-12 rounded-full border-2 border-red-500/30 flex items-center justify-center">
-                <span className="text-2xl">+</span>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold">More Controls</div>
-                <div className="text-sm mt-1">Additional system controls coming soon</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* SYSTEM Button - Right Half */}
+        <button
+          onClick={handleSystemClick}
+          className="flex-1 bg-display-black hover:bg-gray-900 transition-colors flex items-center justify-center border-l border-gray-600"
+          style={{ 
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            color: 'hsl(0, 100%, 50%)',
+            textAlign: 'center'
+          }}
+        >
+          <span style={{ 
+            position: 'relative',
+            top: '20px',
+            left: '100px'
+          }}>
+            SYSTEM
+          </span>
+        </button>
       </div>
     </div>
   );
