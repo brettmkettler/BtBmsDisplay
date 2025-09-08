@@ -94,7 +94,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Screen control APIs
   app.post("/api/screen/off", (req, res) => {
     try {
-      // Turn screen black/off
+      // Broadcast screen off to all WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'screen_control',
+            isScreenOn: false,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
       res.json({ success: true, message: "Screen turned off" });
     } catch (error) {
       res.status(500).json({ error: "Failed to turn off screen" });
@@ -103,7 +112,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/screen/on", (req, res) => {
     try {
-      // Turn screen back on
+      // Broadcast screen on to all WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'screen_control',
+            isScreenOn: true,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
       res.json({ success: true, message: "Screen turned on" });
     } catch (error) {
       res.status(500).json({ error: "Failed to turn on screen" });
