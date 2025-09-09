@@ -47,8 +47,8 @@ export default function SystemMenu() {
   const handleLEDControl = async (deviceId: string, state: 'on' | 'off') => {
     setActionLoading(`${deviceId}_${state}`);
     try {
-      const response = await fetch(`http://localhost:3000/api/digital/${deviceId}?state=${state}`, {
-        method: 'POST'
+      const response = await fetch(`http://localhost:5000/digital/${deviceId}?state=${state}`, {
+        method: 'GET'
       });
       
       const data = await response.json();
