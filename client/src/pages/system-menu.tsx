@@ -4,11 +4,22 @@ import { ArrowLeft, DoorOpen, DoorClosed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-// working
+
 export default function SystemMenu() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // LED/Lamp devices configuration
+  const ledDevices = [
+    { id: 'led_strip_front', name: 'Front LED Strip', icon: '💡' },
+    { id: 'led_strip_rear', name: 'Rear LED Strip', icon: '💡' },
+    { id: 'work_lights', name: 'Work Lights', icon: '🔦' },
+    { id: 'interior_lights', name: 'Interior Lights', icon: '🏠' },
+    { id: 'exterior_lights', name: 'Exterior Lights', icon: '🌟' },
+    { id: 'status_led', name: 'Status LED', icon: '🔴' },
+    { id: 'warning_lights', name: 'Warning Lights', icon: '⚠️' }
+  ];
 
   const handleBatteryDoorAction = async (action: 'open' | 'close') => {
     setActionLoading(action);
@@ -28,6 +39,62 @@ export default function SystemMenu() {
       toast({
         title: "Error",
         description: `Failed to ${action} battery doors`,
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLEDControl = async (deviceId: string, state: 'on' | 'off') => {
+    setActionLoading(`${deviceId}_${state}`);
+    try {
+      const response = await fetch(`http://localhost:3000/api/digital/${deviceId}?state=${state}`, {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.status !== 'success') {
+        throw new Error(`API returned status: ${data.status}`);
+      }
+      
+      toast({
+        title: "Success",
+        description: `${deviceId.replace(/_/g, ' ')} turned ${state}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to turn ${state} ${deviceId.replace(/_/g, ' ')}`,
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTestAllLights = async (state: 'on' | 'off') => {
+    setActionLoading(`test_all_${state}`);
+    try {
+      const response = await fetch(`http://localhost:3000/api/digital/test-all?state=${state}`, {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.status !== 'success') {
+        throw new Error(`API returned status: ${data.status}`);
+      }
+      
+      toast({
+        title: "Test Complete",
+        description: data.message,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to test all lights`,
         variant: "destructive",
       });
     } finally {
@@ -108,6 +175,68 @@ export default function SystemMenu() {
             </CardContent>
           </Card>
 
+          {/* LED/Lamp Controls */}
+          <div className="col-span-full">
+            <h2 className="text-xl font-semibold mb-4 text-red-400 border-b border-red-500/30 pb-2">LED/Lamp Controls</h2>
+          </div>
+
+          {ledDevices.map((device) => (
+            <Card key={device.id} className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <span className="text-3xl">{device.icon}</span>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-red-500">{device.name}</div>
+                    <div className="flex space-x-2 mt-2">
+                      <Button
+                        onClick={() => handleLEDControl(device.id, 'on')}
+                        disabled={actionLoading === `${device.id}_on`}
+                        className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                      >
+                        On
+                      </Button>
+                      <Button
+                        onClick={() => handleLEDControl(device.id, 'off')}
+                        disabled={actionLoading === `${device.id}_off`}
+                        className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                      >
+                        Off
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {/* Test All Lights */}
+          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <span className="text-3xl">⚠️</span>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-red-500">Test All Lights</div>
+                  <div className="flex space-x-2 mt-2">
+                    <Button
+                      onClick={() => handleTestAllLights('on')}
+                      disabled={actionLoading === 'test_all_on'}
+                      className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                    >
+                      On
+                    </Button>
+                    <Button
+                      onClick={() => handleTestAllLights('off')}
+                      disabled={actionLoading === 'test_all_off'}
+                      className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                    >
+                      Off
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Placeholder for future system controls */}
           <Card className="bg-black border-red-500/30 opacity-50">
             <CardContent className="p-6">
@@ -141,7 +270,7 @@ export default function SystemMenu() {
           <span style={{ 
             position: 'relative',
             top: '20px',
-            left: '-90px'
+            left: '-80px'
           }}>
             ACTIVATE
           </span>

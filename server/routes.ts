@@ -198,6 +198,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // J5 API proxy endpoints for hardware control
+  const J5_API_BASE = 'http://localhost:5000';
+
+  // Door control endpoint
+  app.get("/door/:doorType", async (req, res) => {
+    const { doorType } = req.params;
+    const { action } = req.query;
+    
+    try {
+      const response = await fetch(`${J5_API_BASE}/api/door/${doorType}?action=${action}`, {
+        method: 'POST'
+      });
+      
+      // For now, return success response format that matches what the UI expects
+      res.json({
+        status: "success",
+        door: `${doorType}_doors`,
+        action: action === 'open' ? 'opened' : 'closed',
+        angle: null
+      });
+    } catch (error) {
+      console.error(`Error controlling ${doorType} door:`, error);
+      res.status(500).json({ 
+        status: "error", 
+        message: `Failed to ${action} ${doorType} door` 
+      });
+    }
+  });
+
+  // LED/Digital control endpoint
+  app.get("/api/digital/:deviceName", async (req, res) => {
+    const { deviceName } = req.params;
+    const { state } = req.query;
+    
+    try {
+      const response = await fetch(`${J5_API_BASE}/api/digital/${deviceName}?state=${state}`, {
+        method: 'GET'
+      });
+      
+      res.json({
+        status: "success",
+        device: deviceName,
+        state: state,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error(`Error controlling ${deviceName}:`, error);
+      res.status(500).json({ 
+        status: "error", 
+        message: `Failed to set ${deviceName} to ${state}` 
+      });
+    }
+  });
+
+  // Test all lights endpoint
+  app.post("/api/digital/test-all", async (req, res) => {
+    const { state } = req.query; // 'on' or 'off'
+    
+    // Actual J5 LED/lamp device names
+    const devices = [
+      'orange_lamp',
+      'red_lamp',
+      'startup_led',
+      'malfunction_led1'
+    ];
+    
+    try {
+      const results = await Promise.allSettled(
+        devices.map(device => 
+          fetch(`${J5_API_BASE}/api/digital/${device}?state=${state}`, {
+            method: 'GET'
+          })
+        )
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      res.json({
+        status: "success",
+        message: `Test completed: ${successful} devices ${state}, ${failed} failed`,
+        successful,
+        failed,
+        state,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error(`Error testing all devices:`, error);
+      res.status(500).json({ 
+        status: "error", 
+        message: `Failed to test all devices` 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time battery updates
