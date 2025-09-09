@@ -112,93 +112,127 @@ export default function SystemMenu() {
 
   return (
     <div className="min-h-screen bg-black text-red-500 flex flex-col">
-      {/* Main Content Area - 4/5 of screen height */}
-      <div className="flex-1 p-6" style={{ height: '80vh' }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={() => setLocation('/')}
-            className="text-red-500 hover:bg-red-500/10 border border-red-500/30 hover:border-red-500"
-          >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Back to Battery Monitor
-          </Button>
-          <h1 className="text-3xl font-bold text-red-500">System Menu</h1>
-          <div className="w-32" /> {/* Spacer for centering */}
-        </div>
-
-        {/* System Controls Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          
-          {/* Battery Doors Section */}
-          <div className="col-span-full">
-            <h2 className="text-xl font-semibold mb-4 text-red-400 border-b border-red-500/30 pb-2">Battery Doors</h2>
+      {/* Main Content Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto touch-pan-y" style={{ height: '80vh' }}>
+        <div className="p-4">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/')}
+              className="text-red-500 hover:bg-red-500/10 border border-red-500/30 hover:border-red-500"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-bold text-red-500">System Menu</h1>
+            <div className="w-20" /> {/* Spacer for centering */}
           </div>
 
-          {/* Open Battery Doors */}
-          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-6">
-              <Button
-                onClick={() => handleBatteryDoorAction('open')}
-                disabled={actionLoading === 'open'}
-                className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
-              >
-                <DoorOpen className="h-12 w-12 text-red-400" />
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-red-500">Open Battery Doors</div>
-                  <div className="text-sm text-red-400 mt-1">
-                    {actionLoading === 'open' ? 'Opening...' : 'Click to open all battery doors'}
-                  </div>
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* System Controls Grid - More compact */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-7xl mx-auto">
+            
+            {/* Battery Doors Section */}
+            <div className="col-span-full">
+              <h2 className="text-lg font-semibold mb-2 text-red-400 border-b border-red-500/30 pb-1">Battery Doors</h2>
+            </div>
 
-          {/* Close Battery Doors */}
-          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-6">
-              <Button
-                onClick={() => handleBatteryDoorAction('close')}
-                disabled={actionLoading === 'close'}
-                className="w-full h-full min-h-[120px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-3"
-              >
-                <DoorClosed className="h-12 w-12 text-red-400" />
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-red-500">Close Battery Doors</div>
-                  <div className="text-sm text-red-400 mt-1">
-                    {actionLoading === 'close' ? 'Closing...' : 'Click to close all battery doors'}
-                  </div>
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* LED/Lamp Controls */}
-          <div className="col-span-full">
-            <h2 className="text-xl font-semibold mb-4 text-red-400 border-b border-red-500/30 pb-2">LED/Lamp Controls</h2>
-          </div>
-
-          {ledDevices.map((device) => (
-            <Card key={device.id} className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <span className="text-3xl">{device.icon}</span>
+            {/* Open Battery Doors */}
+            <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300">
+              <CardContent className="p-3">
+                <Button
+                  onClick={() => handleBatteryDoorAction('open')}
+                  disabled={actionLoading === 'open'}
+                  className="w-full h-full min-h-[80px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-2"
+                >
+                  <DoorOpen className="h-8 w-8 text-red-400" />
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-red-500">{device.name}</div>
-                    <div className="flex space-x-2 mt-2">
+                    <div className="text-sm font-semibold text-red-500">Open Doors</div>
+                    <div className="text-xs text-red-400">
+                      {actionLoading === 'open' ? 'Opening...' : 'Battery doors'}
+                    </div>
+                  </div>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Close Battery Doors */}
+            <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300">
+              <CardContent className="p-3">
+                <Button
+                  onClick={() => handleBatteryDoorAction('close')}
+                  disabled={actionLoading === 'close'}
+                  className="w-full h-full min-h-[80px] bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500 flex flex-col items-center justify-center space-y-2"
+                >
+                  <DoorClosed className="h-8 w-8 text-red-400" />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-red-500">Close Doors</div>
+                    <div className="text-xs text-red-400">
+                      {actionLoading === 'close' ? 'Closing...' : 'Battery doors'}
+                    </div>
+                  </div>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* LED/Lamp Controls */}
+            <div className="col-span-full">
+              <h2 className="text-lg font-semibold mb-2 text-red-400 border-b border-red-500/30 pb-1">LED/Lamp Controls</h2>
+            </div>
+
+            {ledDevices.map((device) => (
+              <Card key={device.id} className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300">
+                <CardContent className="p-3">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <span className="text-2xl">{device.icon}</span>
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-red-500">{device.name}</div>
+                      <div className="flex space-x-1 mt-1">
+                        <Button
+                          onClick={() => handleLEDControl(device.id, 'on')}
+                          disabled={actionLoading === `${device.id}_on`}
+                          size="sm"
+                          className="bg-black hover:bg-red-500/10 border border-red-500/50 hover:border-red-400 text-red-500 text-xs px-2 py-1"
+                        >
+                          On
+                        </Button>
+                        <Button
+                          onClick={() => handleLEDControl(device.id, 'off')}
+                          disabled={actionLoading === `${device.id}_off`}
+                          size="sm"
+                          className="bg-black hover:bg-red-500/10 border border-red-500/50 hover:border-red-400 text-red-500 text-xs px-2 py-1"
+                        >
+                          Off
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Test All Lights */}
+            <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300">
+              <CardContent className="p-3">
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <span className="text-2xl">⚠️</span>
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-red-500">Test All</div>
+                    <div className="flex space-x-1 mt-1">
                       <Button
-                        onClick={() => handleLEDControl(device.id, 'on')}
-                        disabled={actionLoading === `${device.id}_on`}
-                        className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                        onClick={() => handleTestAllLights('on')}
+                        disabled={actionLoading === 'test_all_on'}
+                        size="sm"
+                        className="bg-black hover:bg-red-500/10 border border-red-500/50 hover:border-red-400 text-red-500 text-xs px-2 py-1"
                       >
                         On
                       </Button>
                       <Button
-                        onClick={() => handleLEDControl(device.id, 'off')}
-                        disabled={actionLoading === `${device.id}_off`}
-                        className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
+                        onClick={() => handleTestAllLights('off')}
+                        disabled={actionLoading === 'test_all_off'}
+                        size="sm"
+                        className="bg-black hover:bg-red-500/10 border border-red-500/50 hover:border-red-400 text-red-500 text-xs px-2 py-1"
                       >
                         Off
                       </Button>
@@ -207,50 +241,22 @@ export default function SystemMenu() {
                 </div>
               </CardContent>
             </Card>
-          ))}
 
-          {/* Test All Lights */}
-          <Card className="bg-black border-red-500/50 hover:border-red-400 transition-all duration-300 cursor-pointer">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <span className="text-3xl">⚠️</span>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-red-500">Test All Lights</div>
-                  <div className="flex space-x-2 mt-2">
-                    <Button
-                      onClick={() => handleTestAllLights('on')}
-                      disabled={actionLoading === 'test_all_on'}
-                      className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
-                    >
-                      On
-                    </Button>
-                    <Button
-                      onClick={() => handleTestAllLights('off')}
-                      disabled={actionLoading === 'test_all_off'}
-                      className="bg-black hover:bg-red-500/10 border-2 border-red-500/50 hover:border-red-400 text-red-500"
-                    >
-                      Off
-                    </Button>
+            {/* Placeholder for future system controls */}
+            <Card className="bg-black border-red-500/30 opacity-50">
+              <CardContent className="p-3">
+                <div className="w-full h-full min-h-[80px] flex flex-col items-center justify-center space-y-2 text-red-500/50">
+                  <div className="h-8 w-8 rounded-full border-2 border-red-500/30 flex items-center justify-center">
+                    <span className="text-xl">+</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-semibold">More Controls</div>
+                    <div className="text-xs mt-1">Additional system controls coming soon</div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Placeholder for future system controls */}
-          <Card className="bg-black border-red-500/30 opacity-50">
-            <CardContent className="p-6">
-              <div className="w-full h-full min-h-[120px] flex flex-col items-center justify-center space-y-3 text-red-500/50">
-                <div className="h-12 w-12 rounded-full border-2 border-red-500/30 flex items-center justify-center">
-                  <span className="text-2xl">+</span>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold">More Controls</div>
-                  <div className="text-sm mt-1">Additional system controls coming soon</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
