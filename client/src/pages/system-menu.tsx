@@ -12,13 +12,11 @@ export default function SystemMenu() {
 
   // LED/Lamp devices configuration
   const ledDevices = [
-    { id: 'led_strip_front', name: 'Front LED Strip', icon: '💡' },
-    { id: 'led_strip_rear', name: 'Rear LED Strip', icon: '💡' },
-    { id: 'work_lights', name: 'Work Lights', icon: '🔦' },
-    { id: 'interior_lights', name: 'Interior Lights', icon: '🏠' },
-    { id: 'exterior_lights', name: 'Exterior Lights', icon: '🌟' },
-    { id: 'status_led', name: 'Status LED', icon: '🔴' },
-    { id: 'warning_lights', name: 'Warning Lights', icon: '⚠️' }
+    { id: 'orange_lamp', name: 'Orange Lamp', icon: '�' },
+    { id: 'red_lamp', name: 'Red Lamp', icon: '�' },
+    { id: 'startup_led', name: 'Startup LED', icon: '�' },
+    { id: 'malfunction_led1', name: 'Malfunction LED', icon: '⚠️' },
+    { id: 'other2', name: 'Other LED (GPIO 24)', icon: '💡' }
   ];
 
   const handleBatteryDoorAction = async (action: 'open' | 'close') => {

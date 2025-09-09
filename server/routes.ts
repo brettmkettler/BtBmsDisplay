@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { action } = req.query;
     
     try {
-      const response = await fetch(`${J5_API_BASE}/api/door/${doorType}?action=${action}`, {
+      const response = await fetch(`${J5_API_BASE}/door/${doorType}?action=${action}`, {
         method: 'POST'
       });
       
@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { state } = req.query;
     
     try {
-      const response = await fetch(`${J5_API_BASE}/api/digital/${deviceName}?state=${state}`, {
+      const response = await fetch(`${J5_API_BASE}/digital/${deviceName}?state=${state}`, {
         method: 'GET'
       });
       
@@ -261,13 +261,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       'orange_lamp',
       'red_lamp',
       'startup_led',
-      'malfunction_led1'
+      'malfunction_led1',
+      'other2'
     ];
     
     try {
       const results = await Promise.allSettled(
         devices.map(device => 
-          fetch(`${J5_API_BASE}/api/digital/${device}?state=${state}`, {
+          fetch(`${J5_API_BASE}/digital/${device}?state=${state}`, {
             method: 'GET'
           })
         )
